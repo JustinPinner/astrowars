@@ -1,0 +1,6 @@
+.DS_Store
+*.code-workspace
+*.sublime-project
+*.sublime-workspace
+dist
+node_modules
