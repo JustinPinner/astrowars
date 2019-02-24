@@ -1,0 +1,106 @@
+
+body {
+	overflow: hidden;
+	background-color: #000000;
+}
+
+#bgdiv {
+	position: absolute;
+	overflow: hidden;
+	z-index: 0; 	
+}
+
+#bgcanvas {
+	overflow: hidden;
+	top: 0px;
+	left: 0px; 
+	z-index: 1; 	
+}
+
+#mgdiv {
+	background: transparent; 	
+	position: absolute;
+	overflow: hidden;
+	z-index: 2; 	
+}
+
+#mgcanvas {
+	background: transparent; 	
+	overflow: hidden;
+	top: 0px;
+	left: 0px; 
+	z-index: 3; 	
+}
+
+#fgdiv {
+	background: transparent; 	
+	overflow: hidden;
+	position: absolute;
+	z-index: 4; 
+}
+
+#fgcanvas {
+	background: #8877; 
+	overflow: hidden;
+	top: 0px;
+	left: 0px;
+	z-index: 5; 
+}
+
+#touchdiv {
+	background: transparent; 	
+	overflow: hidden;
+	position: absolute;
+	z-index: 6; 
+}
+
+#touchcanvas {
+	background: transparent; 	
+	overflow: hidden;
+	top: 0px;
+	left: 0px;
+	z-index: 7; 
+}
+
+#ui-debug-top {
+	position: absolute;
+	background-color: transparent;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	height: 30px;
+	z-index: 99;
+	vertical-align: top;
+}
+
+#ui-debug-bottom {
+	position: absolute;
+	background-color: transparent;
+	bottom: -0px;
+	left: 0px;
+	width: 100%;
+	height: 30px;
+	z-index: 99;
+	vertical-align: bottom;
+}
+
+.ui.debug {
+	display: inline-block;
+	position: relative;
+}
+
+.ui.debug > p {
+	margin: 0px;
+	font-size: x-small;
+	color: #ffffff;
+}
+
+.ui.debug.version {
+	float: right;
+	margin-right: 5px;
+}
+
+#uiBottom {
+	display: none;
+}
+

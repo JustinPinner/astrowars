@@ -1,0 +1,136 @@
+import partition from '../lib/partition';
+
+export const Keys = {
+  Q: 'KEYQ',
+  W: 'KEYW',
+  E: 'KEYE',
+  R: 'KEYR',
+  T: 'KEYT',
+  Y: 'KEYY',
+  U: 'KEYU',
+  I: 'KEYI',
+  O: 'KEYO',
+  P: 'KEYP',    
+
+  A: 'KEYA',
+  S: 'KEYS',
+  D: 'KEYD',
+  F: 'KEYF',
+  G: 'KEYG',
+  H: 'KEYH',
+  J: 'KEYJ',
+  K: 'KEYK',
+  L: 'KEYL',
+
+  Z: 'KEYZ',
+  X: 'KEYX',
+  C: 'KEYC',
+  V: 'KEYV',
+  B: 'KEYB',
+  N: 'KEYN',
+  M: 'KEYM',
+
+  ARROWUP: 'ARROWUP',
+  ARROWDOWN: 'ARROWDOWN',
+  ARROWLEFT: 'ARROWLEFT',
+  ARROWRIGHT: 'ARROWRIGHT',
+  SHIFTLEFT: 'SHIFTLEFT',
+  SPACE: 'SPACE',
+  SHIFTRIGHT: 'SHIFTRIGHT',
+  ENTER: 'ENTER',
+  BACKSPACE: 'BACKSPACE',
+  ESCAPE: 'ESCAPE'
+}
+
+class KeyHandler {
+  constructor(keyProcessor) {
+    this._enabled = false;
+    this._processKey = keyProcessor;
+    this._ignored = [];
+    this._queue = [];
+    this.pressed = {}; 
+  }
+  get enabled() {
+    return this._enabled;
+  }
+  set enabled(val) {
+    this._enabled = val;
+  }
+}
+
+KeyHandler.prototype.ignore = function(key, ms) {
+  if (this.ignored(key)) {
+    return; // prevent endless ignoring from repeated key presses
+  }
+  const now = Date.now();
+  const active = partition(this._ignored, function(k) {
+    return k.timeout > now;
+  })[0];
+  const index = active.findIndex(function(k) {
+    return k.key == key;
+  });
+  const expires = now + ms;
+  if (index < 0) {
+    active.push({
+      key: key, 
+      timeout: expires
+    });
+  }
+  this._ignored = active;
+}
+
+KeyHandler.prototype.listen = function(key) {
+  const ignoring = partition(this._ignored, function(k) {
+    return k.key !== key;
+  })[0];
+  this._ignored = ignoring;
+}
+
+KeyHandler.prototype.ignored = function(key) {
+  const now = Date.now();
+  const active = partition(this._ignored, function(k) {
+    return k.timeout >= now;
+  })[0];
+  this._ignored = active;
+  return active.findIndex(function(k) {
+    return k.key == key;
+  }) > -1;
+}
+
+KeyHandler.prototype.queued = function(key) {
+  return partition(this._queue, function(k) {
+    return k == key;
+  })[0].length > 0;
+}
+
+KeyHandler.prototype.enQueue = function(key) {
+  if(!this.queued(key)) {
+    this._queue.push(key);
+  }
+}
+
+KeyHandler.prototype.deQueue = function(key) {
+  this._queue = partition(this._queue, function(k) {
+    return k != key;
+  })[0];
+}
+
+KeyHandler.prototype.handleKeyDown = function(e) {
+  e.preventDefault();
+  const key = e.code.toUpperCase();
+  if (this.ignored(key)) {
+    return;
+  }
+  this._processKey(key, true, this);
+}
+
+KeyHandler.prototype.handleKeyUp = function(e) {
+  e.preventDefault();
+  const key = e.code.toUpperCase();
+  this._processKey(key, false, this);
+  // if (this.ignored(key)) {
+  //   this.listen(key);
+  // }
+}
+
+export default KeyHandler;
