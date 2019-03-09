@@ -1,8 +1,9 @@
 import { playerBase } from '../model/players';
+import { playerMissile } from '../model/projectiles';
 
 const timing = {};
 
-const onUpdate = (playerObj) => {
+const onPlayerUpdate = (playerObj) => {
   processPlayerInputs(playerObj);
 };
 
@@ -43,6 +44,18 @@ const moveToColumn = (playerObj, newCol) => {
   playerBaseObj.coordinates.x = playerObj.coordinates.x;
 };
 
+const shoot = (playerObj) => {
+  // we can only fire one shot at a time
+  const playerShot = playerObj.engine.getObjectByType('missile');
+  if (!playerShot) {
+    const launchPosition = {
+      x: playerObj.coordinates.x + (playerObj.width / 2) - (playerMissile.width / 2), 
+      y: playerObj.coordinates.y
+    };
+    playerObj.engine.createObject(playerMissile, launchPosition);
+  }
+};
+
 const processPlayerInputs = (playerObj) => {
   const currentCol = currentColumn(playerObj);
   if (playerObj.engine.gamepad) {
@@ -65,23 +78,21 @@ const processPlayerInputs = (playerObj) => {
       if (playerObj.state == 'landing') {
         playerObj.thrust();
       } else {
-        playerObj.shoot();
+        shoot(playerObj);
       }
 		}
 	}
 	
   if (playerObj.engine.keyHandler.pressed.left) {
-    //playerObj.setVelocity({x: -1});
     moveToColumn(playerObj, currentCol - 1);
   } else if (playerObj.engine.keyHandler.pressed.right) {
-    //playerObj.setVelocity({x: 1});
     moveToColumn(playerObj, currentCol + 1);
   }
-  if (playerObj.engine.keyHandler.fire) {
+  if (playerObj.engine.keyHandler.pressed.enter) {
     if (playerObj.state == 'landing') {
       playerObj.thrust();
     } else {
-      playerObj.shoot();
+      shoot(playerObj);
     }
   }
 	
@@ -89,4 +100,4 @@ const processPlayerInputs = (playerObj) => {
 
 };
 
-export { onUpdate };
+export { onPlayerUpdate };

@@ -1,3 +1,4 @@
+const uuidv4 = require('uuid/v4');
 import Reactor from '../lib/events';
 import Canvas2D from '../environment/canvas';
 import { TouchInterface, TouchHandler } from '../ui/touch';
@@ -153,13 +154,40 @@ Engine.prototype.refreshUi = function() {
 
 Engine.prototype.createObject = function(conf, position) {
   const gameObject = new GameObject(conf, position, this);
-  this.gameObjects.push(gameObject);
+  // this.gameObjects.push(gameObject);
   return gameObject;  
 }
 
+Engine.prototype.registerObject = function(gameObject) {
+  if (!gameObject.id) {
+    gameObject.id = uuidv4();  
+  }
+  if (this.getObjectById(gameObject.id)) {
+    // object doesn't exist
+    return false;
+  }
+  this.gameObjects.push(gameObject);
+  return true;
+}
+
+Engine.prototype.getObjectById = function(id) {
+  const objs = this.getObjectsById(id);
+  return (objs && objs.length > 0) ? objs[0] : undefined;
+}
+
+Engine.prototype.getObjectsById = function(id) {
+  const objs = this.gameObjects.filter(function(obj) {return obj.id === id});
+  return (objs.length > 0) ? objs : undefined;
+}
+
 Engine.prototype.getObjectByType = function(type) {
+  const objs = this.getObjectsByType(type);
+  return (objs && objs.length > 0) ? objs[0] : undefined;
+}
+
+Engine.prototype.getObjectsByType = function(type) {
   const objs = this.gameObjects.filter(function(obj) {return obj.type === type});
-  return (objs.length > 0) ? objs[0] : undefined;
+  return (objs.length > 0) ? objs : undefined;
 }
 
 Engine.prototype.filterObjects = function(objectTypeOrTypes) {

@@ -22,6 +22,9 @@ const processor = (pressedKey, isPressed, host) => {
       host.ignore(Keys.ARROWRIGHT, 500);
       host.ignore(Keys.D, 500);
       break;
+    case Keys.ENTER:
+      host.pressed.enter = isPressed;
+      break;
     case Keys.ESCAPE:
       debugger;
       break;  

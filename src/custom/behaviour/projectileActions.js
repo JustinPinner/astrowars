@@ -8,12 +8,26 @@ const onUpdateBomb = (bombObj) => {
 };
 
 const processMissileUpdate = (missileObj) => {
-  // TODO
+  missileObj.coordinates.x += missileObj.velocity.x;
+  missileObj.coordinates.y += missileObj.velocity.y;  
+  if (!missileObj.isOnScreen()) {
+    missileObj.disposable = true;
+  }
+  const currentCell = missileObj.engine.gameBoard.cellFromCoordinates(missileObj.coordinates);
+  if (currentCell.length > 0) {
+    const objectInCell = currentCell[0][0].gameObject;
+    if (objectInCell && objectInCell.type) {   // e.g. not just an empty object ({})
+      missileObj.engine.eventSystem.dispatchEvent(objectInCell.id, {type: 'hit', source: missileObj.id});
+      missileObj.disposable = true;
+    }  
+  }
+  return;
 }
 
 const processBombUpdate = (bombObj) => {
   // TODO
+  return;
 }
 
-export { onUpdateMissile, onUpdateBomb };
+export { onUpdateMissile, onUpdateBomb, testMissileCollision };
 

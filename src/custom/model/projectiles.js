@@ -5,14 +5,14 @@ const playerMissile = {
   state: 'launched',
   initialVelocity: {
     x: 0,
-    y: 0
+    y: -8
   },
-  width: 2,
+  width: 3,
   height: 4,
   sprite: {
     image: {
       path: 'player-missile.png',
-      imageWidth: 2,
+      imageWidth: 3,
       imageHeight: 4
     }  
   },

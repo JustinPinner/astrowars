@@ -1,5 +1,6 @@
 const uuidv4 = require('uuid/v4');
 import { Vector2D, Point2D } from '../lib/2d';
+import { FSM } from '../lib/fsm';
 import Sprite from '../model/sprite';
 
 class GameObject {
@@ -26,7 +27,12 @@ class GameObject {
 		this.update = conf.update.bind(this, this);
 		this.ready = true;
 		this.disposable = false;
-		this.engine.eventSystem.dispatchEvent(`${this.id}-Loaded`)
+		this.fsm = conf.fsmStates ? new FSM(this, conf.fsmStates) : undefined;
+		this.engine.eventSystem.registerEvent(`${this.id}`);
+		this.engine.eventSystem.addEventListener(`${this.id}`, this.eventListener.bind(this, this));
+		this.engine.registerObject(this);		
+		// v-- this must be last --v
+		this.engine.eventSystem.dispatchEvent(`${this.id}-Loaded`);
 	}
 	get type() {
 		return this.conf.type;
@@ -47,6 +53,10 @@ class GameObject {
 		const rotated = this.coordinates.rotate(this.centre, degrees);
 		return rotated;
 	}
+}
+
+GameObject.prototype.eventListener = function (obj, eventArgs) { 
+	console.log(`${this.id} GameObject eventListener triggered`);
 }
 
 GameObject.prototype.rotate = function(degrees) {

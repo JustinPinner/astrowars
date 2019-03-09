@@ -1,5 +1,5 @@
 import { Keys } from '../../js/ui/keys';
-import { onUpdate } from '../behaviour/playerActions';
+import { onPlayerUpdate } from '../behaviour/playerActions';
 
 const player = {
 	type: 'player',
@@ -35,7 +35,7 @@ const player = {
 				minInterval: 1000
 		}
 	},
-	update: onUpdate
+	update: onPlayerUpdate
 };
 
 const playerBase = {
@@ -60,4 +60,4 @@ const playerBase = {
 	update: () => {}
 }
 
-export { player, playerBase };
+export { player, playerBase, playerShot };
