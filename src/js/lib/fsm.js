@@ -6,11 +6,6 @@ class FSM {
     this.currentState = undefined;
     this.lastTransitionTime = undefined;
     this.lastExecutionTime = undefined;
-    if (host) {
-      host.engine.eventSystem.registerEvent(`${host.id}-FSMEvent`);
-      host.engine.eventSystem.addEventListener(`${host.id}-FSMEvent`, this.eventListener.bind(this));
-      host.engine.eventSystem.dispatchEvent(`${host.id}-FSMEvent`, { action: 'SET', state: this.states.default });
-    }
   }
 }
 
@@ -34,17 +29,27 @@ FSM.prototype.eventListener = function(evt) {
   }
 }
 
-FSM.prototype.execute = function() {
-  this.lastExecutionTime = Date.now();
+FSM.prototype.execute = function() {  
+  const now = Date.now();
+  if (!this.host) {
+    // Wut?!
+    return;
+  }
   if (!this.currentState) {
     this.currentState = (this.states.default ? this.states.default : undefined);
   } 
-  if (this.host && this.currentState) {
-		this.currentState.execute(this.host);
+  if (this.host && this.currentState && this.currentState.execute) {
+    if ((this.lastExecutionTime || 0) + (this.currentState.minimumExecutionInterval || 0) <= now) {
+      this.lastExecutionTime = now;
+      this.currentState.execute(this.host);
+    }
 	}
 }
 
 FSM.prototype.setState = function(newState) {
+  if (!this.host) {
+    return;
+  }
   this.currentState = newState;
   this.lastTransitionTime = Date.now();
   this.lastExecutionTime = undefined;

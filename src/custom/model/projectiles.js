@@ -7,8 +7,8 @@ const playerMissile = {
     x: 0,
     y: -8
   },
-  width: 3,
-  height: 4,
+  width: 6,
+  height: 8,
   sprite: {
     image: {
       path: 'player-missile.png',
@@ -26,8 +26,8 @@ const alienBomb = {
     x: 0,
     y: 0
   },
-  width: 2,
-  height: 4,
+  width: 6,
+  height: 8,
   sprite: {
     image: {
       path: 'alien-bomb.png',

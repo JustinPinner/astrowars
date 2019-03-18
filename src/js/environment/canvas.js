@@ -94,7 +94,7 @@ class Canvas2D {
 };
 
 Canvas2D.prototype.loadImage = function(imagePath, onLoad) {
-	this.gameEngine.images.load(imagePath, onLoad);
+	return this.gameEngine.images.load(imagePath, onLoad);
 }
 
 Canvas2D.prototype.init = function(fillImage, callBack) {
@@ -104,8 +104,8 @@ Canvas2D.prototype.init = function(fillImage, callBack) {
 			this.canvasContext = canvasElem.getContext('2d');
 		}
 	}
-	if (fillImage) {
-		this.loadImage(fillImage, callBack);		
+	if (fillImage || this.config.canvas.image) {
+		this.canvasImage = this.loadImage((fillImage || this.config.canvas.image), callBack);		
 	}
 	this.canvasReady = !!this.canvasContext;	
 };

@@ -2,7 +2,7 @@
 // these functions will be bound into GameObject instances with .bind(this, this)
 // so remember to change this.state if/when needed
 
-import { alienCommandShipConf } from '../model/aliens';
+// import { alienCommandShipConf } from '../model/aliens';
 
 const stateNames = {
   dying: 'dyingState',
@@ -16,6 +16,95 @@ const stateNames = {
   strafe: 'strafeState',
   idle: 'idleState'
 }
+
+const horizontalMove = {
+  inc: 1,   // right
+  dec: -1   // left
+};
+
+const verticalMove = {
+  inc: -1,  // up
+  dec: 1    // down
+};
+
+const moveInstructions = {
+  leftRight: {
+    horizontal: horizontalMove,  
+  },
+  upDown: {
+    vertical: verticalMove  
+  },
+  diagonal: {
+    horizontal: horizontalMove,
+    vertical: verticalMove
+  },
+  diagonalDown: {
+    horizontal: horizontalMove,
+    vertical: verticalMove
+  },
+
+};
+
+const nextAvailableCell = (alien, moveInstruction) => {
+  const maybeCell = alien.engine.gameBoard.cellFromCoordinates(alien.coordinates);
+  if (!maybeCell) {
+    // Wat?
+    return;
+  }
+  const currentCell = maybeCell[0][0];
+
+  let relativeColumn = 0;
+  let relativeRow = 0;
+  if (moveInstruction.horizontal && moveInstruction.vertical) {
+    relativeColumn = Math.random() * 100 > 50 ? moveInstruction.horizontal.inc : moveInstruction.horizontal.dec; 
+    relativeRow = Math.random() * 100 > 50 ? moveInstruction.vertical.inc : moveInstruction.vertical.dec;
+  } else if (moveInstruction.horizontal) {
+    relativeColumn = Math.random() * 100 > 50 ? moveInstruction.horizontal.inc : moveInstruction.horizontal.dec; 
+  } else {
+    relativeRow = Math.random() * 100 > 50 ? moveInstruction.vertical.inc : moveInstruction.vertical.dec;     
+  }
+
+  let maybeNeighbourCell = alien.engine.gameBoard.cellNeighbour(currentCell, relativeColumn, relativeRow);
+
+  if (maybeNeighbourCell && maybeNeighbourCell.length > 0) {
+    const neighbourCell = maybeNeighbourCell[0][0];
+    if (!neighbourCell.gameObject.type) {
+      return neighbourCell;
+    } else {
+      // try other direction
+      relativeRow = (relativeRow > 0) ? relativeRow * -1 : 0;
+      relativeColumn = (relativeColumn > 0) ? relativeColumn * -1 : 0;      
+
+      maybeNeighbourCell = alien.engine.gameBoard.cellNeighbour(currentCell, relativeColumn, relativeRow);
+
+      if (maybeNeighbourCell && maybeNeighbourCell.length > 0) {
+        const neighbourCell = maybeNeighbourCell[0][0];
+        if (!neighbourCell.gameObject.type) {
+          // move here
+          return neighbourCell;
+        } else {
+          return null;
+        }        
+      }
+    }
+  } else {
+    // try other direction
+    relativeRow = (relativeRow > 0) ? relativeRow * -1 : 0;
+    relativeColumn = (relativeColumn > 0) ? relativeColumn * -1 : 0;      
+  
+    maybeNeighbourCell = alien.engine.gameBoard.cellNeighbour(currentCell, relativeColumn, relativeRow);
+  
+    if (maybeNeighbourCell && maybeNeighbourCell.length > 0) {
+      const neighbourCell = maybeNeighbourCell[0][0];
+      if (!neighbourCell.gameObject.type) {
+        // move here
+        return neighbourCell;
+      } else {
+        return null;
+      }        
+    }
+  }
+};
 
 const dyingState = {
   name: 'dyingState',
@@ -49,6 +138,7 @@ const circularDiveState = {
 const zigZagDiveState = {
   name: 'zigZagDiveState', 
   nextStates: [stateNames.zigZagClimb, stateNames.landed, stateNames.shot],
+  detectCollisions: true,
   execute: (alien) => { 
     if (alien.gameBoardRow == 1) {
       // TODO: if player cell == alien cell
@@ -60,12 +150,18 @@ const zigZagDiveState = {
       alien.fsm.transition(zigZagClimbState);
       return;
     }
+    const freeCell = nextAvailableCell(alien, moveInstructions.diagonal);
+    if (freeCell) {
+      alien.moveToCell(freeCell);
+    }
+    return;
   }
 };
 
 const zigZagClimbState = {
   name: 'zigZagClimbState',
   nextStates: [stateNames.hover, stateNames.zigZagDive, stateNames.shot],
+  detectCollisions: true,
   execute: (alien) => {
     if (alien.gameBoardRow >= alien.engine.gameBoard.rows - 3) {
       if (Math.random() * 100 > 50) {
@@ -85,9 +181,16 @@ const zigZagClimbState = {
 const hoverState = {
   name: 'hoverState',
   nextStates: [stateNames.shot, stateNames.strafe],
+  minimumExecutionInterval: 500,
+  detectCollisions: true,
   execute: (alien) => {
-    // move left/right
     // DON'T drop bombs!
+    // move left/right
+    const freeCell = nextAvailableCell(alien, moveInstructions.leftRight);
+    if (freeCell) {
+      alien.moveToCell(freeCell);
+    }
+    return;
   }
 };
 
@@ -96,17 +199,12 @@ const shotState = {
   nextStates: [stateNames.dying],
   detectCollisions: false,
   execute: (alien) => {
-    if (alien && alien.type) {
-      switch (alien.type) {
-        case alienCommandShipConf.type: 
-          if (alien.game.engine.phase == 3) {
-            alien.fsm.transition(dyingState);
-          }
-          break;
-        default: 
-          alien.fsm.transition(dyingState);
-          break;
+    if (alien.isCommandShip) { 
+      if (alien.game.engine.phase == 3) {
+        alien.fsm.transition(dyingState);
       }
+    } else {
+      alien.fsm.transition(dyingState);
     }
   }
 };
@@ -126,7 +224,7 @@ const idleState = {
   nextStates: [stateNames.strafe, stateNames.shot],
   detectCollisions: false,
   execute: (alien) => {
-    if (alien.type == alienCommandShipConf.type && alien.engine.phase == 3) {
+    if (alien.isCommandShip && alien.engine.phase == 3) {
       alien.fsm.transition(strafeState);
     }
   }
@@ -145,6 +243,7 @@ const alienCommandShipFSMStates = {
 
 const alienWarshipFSMStates = {
   idle: idleState,
+  hover: hoverState,
   strafe: strafeState,
   shot: shotState,
   default: hoverState
@@ -153,6 +252,7 @@ const alienWarshipFSMStates = {
 const alienFighterFSMStates = {
   zigZagDive: zigZagDiveState,
   zigZagClimb: zigZagClimbState,
+  strafe: strafeState,
   landed: landedState,
   shot: shotState,
   default: strafeState

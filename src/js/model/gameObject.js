@@ -2,6 +2,7 @@ const uuidv4 = require('uuid/v4');
 import { Vector2D, Point2D } from '../lib/2d';
 import { FSM } from '../lib/fsm';
 import Sprite from '../model/sprite';
+import { debug } from 'util';
 
 class GameObject {
 	constructor(conf, position, engine) {
@@ -55,8 +56,8 @@ class GameObject {
 	}
 }
 
-GameObject.prototype.eventListener = function (obj, eventArgs) { 
-	console.log(`${this.id} GameObject eventListener triggered`);
+GameObject.prototype.eventListener = function (thisObj, evt) { 
+	console.log(`${this.id} GameObject eventListener captured event for obj: ${thisObj.id} with args: ${evt}`);
 }
 
 GameObject.prototype.rotate = function(degrees) {
@@ -107,6 +108,11 @@ GameObject.prototype.init = function() {
 	this.loadVertices();
 	this.loadCollisionCentres();
 	this.ready = true;
+	if (this.fsm) {
+		this.engine.eventSystem.registerEvent(`${this.id}FSM`);
+		this.engine.eventSystem.addEventListener(`${this.id}FSM`, this.fsm.eventListener.bind(this.fsm, this));
+		this.engine.eventSystem.dispatchEvent(`${this.id}FSM`, { action: 'SET', state: this.fsm.states.default });
+	}
 	this.engine.eventSystem.deRegisterEvent(`${this.id}-Loaded`);
 }
 
@@ -293,6 +299,7 @@ GameObject.prototype.draw = function() {
 		viewport.context.rotate(degreesToRadians(this.rotation + 90));
 	}
 	viewport.context.fillStyle = this.conf.colour ? this.conf.colour : '#ffffff';
+
 	if (this.sprite && this.sprite.image) {
 		// sub... vars represent sub-sections of a larger image (if applicable)
 		let subX = 0;
@@ -302,11 +309,11 @@ GameObject.prototype.draw = function() {
 		// dest... vars reference the destination within the target canvas
 		let destX = this.coordinates.x;
 		let destY = this.coordinates.y;
-		let destWidth = this.sprite.width;
-		let destHeight = this.sprite.height;
+		let destWidth = this.width || this.sprite.width;
+		let destHeight = this.height || this.sprite.height;
 
 		// adjust for sub-image properties if required
-		if (this.sprite.frame) {
+		if (!isNaN(this.sprite.frame)) {
 			const cell = (this.sprite.frame * this.sprite.width) / (this.sprite.width * this.sprite.columns);
 			const row = Math.floor(this.sprite.frame / this.sprite.columns);
 			const col = (cell - row) * this.sprite.columns;

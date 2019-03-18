@@ -1,3 +1,4 @@
+import { alienCommonFSMStates } from "./alienActions";
 
 const onUpdateMissile = (missileObj) => {
   processMissileUpdate(missileObj);
@@ -17,7 +18,7 @@ const processMissileUpdate = (missileObj) => {
   if (currentCell.length > 0) {
     const objectInCell = currentCell[0][0].gameObject;
     if (objectInCell && objectInCell.type) {   // e.g. not just an empty object ({})
-      missileObj.engine.eventSystem.dispatchEvent(objectInCell.id, {type: 'hit', source: missileObj.id});
+      missileObj.engine.eventSystem.dispatchEvent(objectInCell.id, {target: 'FSM', action: 'TRANSITION', state: alienCommonFSMStates.shot});
       missileObj.disposable = true;
     }  
   }

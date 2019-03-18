@@ -10,11 +10,13 @@ import {
 
 import GameObject from '../../js/model/gameObject';
 
-const alienEventListener = (alienObj, evt) => {
-  console.log(`${alienObj.id} alienEventListener triggered by: ${evt.type} from: ${evt.source}`);
-  switch (evt.type) {
-    case 'hit':
-      alienObj.fsm.transition(alienCommonFSMStates.shot);
+const alienEventListener = (thisObj, evt) => {
+  switch (evt.action) {
+    case 'SET':
+      thisObj.fsm.setState(evt.state);
+      break;
+    case 'TRANSITION':
+      thisObj.fsm.transition(evt.state);
       break;
     default:
       break;      
@@ -32,7 +34,7 @@ const alienCommandShipConf = {
   height: 50,
   sprite: {
     sheet: {
-      path: 'alien-saucer.png',
+      path: 'alien-commandship.png',
       frameWidth: 56, 
       frameHeight: 50,
       rows: 1,
@@ -91,11 +93,35 @@ class Alien extends GameObject {
   constructor(conf, position, engine) {
     super(conf, position, engine);
   }
+  get isCommandShip() {
+    return this.type == alienCommandShipConf.type;
+  }
+  get isWarship() {
+    return this.type == alienWarshipConf.type;
+  }
+  get isFighter() {
+    return this.type == alienFighterConf.type;
+  }
 }
 
-Alien.prototype.eventListener = function (self, eventArgs) {
-  console.log(`${this.id} Alien eventListener triggered`);
-  alienEventListener(self, eventArgs);
+Alien.prototype.eventListener = function (thisObj, evt) {
+  alienEventListener(thisObj, evt);
+}
+
+Alien.prototype.moveToCell = function (cell) {
+  const maybeCurrentCell = this.engine.gameBoard.cellFromCoordinates(this.coordinates);
+  if (!maybeCurrentCell) {
+    console.log(`Live alien (${this.id}) without an address :(`);
+    return;
+  }
+  const currentCell = maybeCurrentCell[0][0];
+  // update image to draw based on row/col position
+  const frame = (currentCell.row % 2 == 0) ? (currentCell.column % 2 == 0 ? 0 : 1) : (currentCell.column % 2 == 0 ? 1 : 0); 
+  this.sprite.frame = frame;
+  cell.gameObject = this;
+  this.coordinates.x = cell.x;
+  this.coordinates.y = cell.y;
+  currentCell.gameObject = {};
 }
 
 class AlienCommandShip extends Alien {
