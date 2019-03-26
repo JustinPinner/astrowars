@@ -20,7 +20,7 @@ class GameObject {
 		this.width = this.conf.width;
 		this.height = this.conf.height;
 		this.vertices = [];
-    this.sprite = undefined;	// will be loaded during the init call triggered by the xxx-Loaded event
+    this.sprites = [];	// will be loaded during the init call triggered by the xxx-Loaded event
     this.scale = this.conf.scale;
 		this.mass = this.conf.mass;
     this.collisionCentres = this.conf.collisionCentres;
@@ -99,12 +99,20 @@ GameObject.prototype.loadStatus = function() {
 	this._status = this._role.initialStatus;
 }
 
-GameObject.prototype.loadSprite = function() {
-	this.sprite = this.conf.sprite && new Sprite(this.conf.sprite, this.conf.position.x, this.conf.position.y, this.engine.images);
+GameObject.prototype.loadSprites = function() {
+	if (this.conf.sprites) {
+		for(let s in this.conf.sprites) {
+			const sprite = new Sprite(this.conf.sprites[s], this.coordinates, this.engine.images);
+			this.sprites.push(sprite);
+			if (this.conf.sprites[s].isDefault) {
+				this.sprite = sprite;
+			}
+		}
+	}
 }
 
 GameObject.prototype.init = function() {
-	this.loadSprite();
+	this.loadSprites();
 	this.loadVertices();
 	this.loadCollisionCentres();
 	this.ready = true;

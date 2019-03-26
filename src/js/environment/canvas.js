@@ -124,8 +124,8 @@ Canvas2D.prototype.draw = function() {
 	this.clear();
 	this.canvasImage && this.canvasContext.drawImage(
 		this.canvasImage, 
-		this.canvasCoordinates.x, 
-		this.canvasCoordinates.y, 
+		0,
+		0,
 		this.canvasWidth, 
 		this.canvasHeight);
 };

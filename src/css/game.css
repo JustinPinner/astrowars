@@ -40,7 +40,6 @@ body {
 }
 
 #fgcanvas {
-	background-color: #000000;
 	overflow: hidden;
 	top: 0px;
 	left: 0px;

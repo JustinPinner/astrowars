@@ -2,14 +2,14 @@
 
 import Engine from './engine/engine';
 import { GameBoard } from '../custom/model/gameBoard';
-import { player, playerBase } from '../custom/model/players';
+import { PlayerCapsule, PlayerBase } from '../custom/model/players';
 import { 
         AlienCommandShip, 
         alienCommandShipConf, 
         AlienWarship, 
-        alienWarshipConf,
-        AlienFighter,
-        alienFighterConf, 
+        alienWarshipConf
+        // AlienFighter,
+        // alienFighterConf, 
 } from '../custom/model/aliens';
 import { playerMissile, alienBomb } from '../custom/model/projectiles';
 import { processor as keyProcessor } from '../custom/keyProcessor';
@@ -51,35 +51,48 @@ const onSetup = (gameEngine) => {
   // and prepare the player's starting row and column
   const playerCapsuleRow = 1;
   const playerColumn = 2;
-  const playerConf = player;
-  playerConf.width = gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].width;
-  playerConf.height = gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].height;
+  // const playerConf = player;
+  // playerConf.width = gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].width;
+  // playerConf.height = gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].height;
 
-  const playerObj = game.createObject(
-    playerConf, 
+  // const playerObj = game.createObject(
+  //   playerConf, 
+  //   {
+  //     x: gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].x, 
+  //     y: gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].y
+  //   }
+  // );
+  // playerObj.gameBoardRow = gameEngine.gameBoard.board[playerCapsuleRow];
+  
+  gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].gameObject = new PlayerCapsule(
     {
       x: gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].x, 
       y: gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].y
-    }
-  );
-  playerObj.gameBoardRow = gameEngine.gameBoard.board[playerCapsuleRow];
-  gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].gameObject = playerObj;
+    },
+    gameEngine
+  )
 
   // the player's base section always follows below the capsule's column, never leaving row 0
   const playerBaseRow = playerCapsuleRow - 1;
-  const playerBaseConf = playerBase;
-  playerBaseConf.width = gameEngine.gameBoard.board[playerCapsuleRow + 1][playerColumn].width;
-  playerBaseConf.height = gameEngine.gameBoard.board[playerCapsuleRow + 1][playerColumn].height;
+  // const playerBaseConf = playerBase;
+  // playerBaseConf.width = gameEngine.gameBoard.board[playerCapsuleRow + 1][playerColumn].width;
+  // playerBaseConf.height = gameEngine.gameBoard.board[playerCapsuleRow + 1][playerColumn].height;
 
-  const playerBaseObj = game.createObject(
-    playerBaseConf, 
+  // const playerBaseObj = game.createObject(
+  //   playerBaseConf, 
+  //   {
+  //     x: gameEngine.gameBoard.board[playerBaseRow][playerColumn].x, 
+  //     y: gameEngine.gameBoard.board[playerBaseRow][playerColumn].y
+  //   }
+  // );
+  // playerBaseObj.player = playerObj;
+  gameEngine.gameBoard.board[playerBaseRow][playerColumn].gameObject = new PlayerBase(
     {
       x: gameEngine.gameBoard.board[playerBaseRow][playerColumn].x, 
       y: gameEngine.gameBoard.board[playerBaseRow][playerColumn].y
-    }
+    },
+    gameEngine
   );
-  playerBaseObj.player = playerObj;
-  gameEngine.gameBoard.board[playerBaseRow][playerColumn].gameObject = playerBaseObj;
   
   // alien command ships occupy the row below the score (9 by default)
   const commandShipRow = gameEngine.gameBoard.rows - 2;
@@ -91,7 +104,7 @@ const onSetup = (gameEngine) => {
     };
     conf.width = gameEngine.gameBoard.board[commandShipRow][c].width;
     conf.height = gameEngine.gameBoard.board[commandShipRow][c].height;
-    conf.sprite.sheet.startFrame = 0;
+    // conf.sprite.sheet.startFrame = 0;
     gameEngine.gameBoard.board[commandShipRow][c].gameObject = new AlienCommandShip(conf, spawnPos, gameEngine);
   }
 
@@ -108,8 +121,8 @@ const onSetup = (gameEngine) => {
     }
     conf.width = gameEngine.gameBoard.board[row][col].width;
     conf.height = gameEngine.gameBoard.board[row][col].height;
-    const frame = (row % 2 == 0) ? (col % 2 == 0 ? 0 : 1) : (col % 2 == 0 ? 1 : 0); 
-    conf.sprite.sheet.startFrame = frame;
+    // const frame = (row % 2 == 0) ? (col % 2 == 0 ? 0 : 1) : (col % 2 == 0 ? 1 : 0); 
+    // conf.sprite.sheet.startFrame = frame;
     const spawnPos = {
       x: gameEngine.gameBoard.board[row][col].x,
       y: gameEngine.gameBoard.board[row][col].y
@@ -160,10 +173,26 @@ const gameConfig = {
         }
       },
       canvas: {
-        selector: '#bgcanvas',
-        image: 'nebulae.jpeg',
+        selector: '#bgcanvas'
       },
       alias: 'background'
+    },
+    midground: {
+      x: ((window.innerWidth / 2) - (800 / 2)),
+      y: 0,
+      width: 800,
+      height: window.innerHeight,
+      wrapper: {
+        selector: '#mgdiv',
+        style: {
+          background: 'transparent'
+        }
+      },
+      canvas: {
+        selector: '#mgcanvas',
+        image: 'nebulae.jpeg'
+      },
+      alias: 'midground'
     },
     foreground: {
       x: ((window.innerWidth / 2) - (300 / 2)),
@@ -173,7 +202,7 @@ const gameConfig = {
       wrapper: {
         selector: '#fgdiv',
         style: {
-          background: 'transparent'
+          background: 'rgba(0,0,0,0.8)'
         }
       },
       canvas: {
@@ -183,9 +212,9 @@ const gameConfig = {
     }
   },
   objectTypes: {
-    players: player,
+    players: PlayerCapsule.type,
     hoverAliens: alienWarshipConf,
-    diveAliens: alienFighterConf,
+//    diveAliens: alienFighterConf,
     missiles: playerMissile,
     bombs: alienBomb
   },
