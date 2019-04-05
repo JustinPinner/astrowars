@@ -1,12 +1,6 @@
-import { alienCommonFSMStates } from "./alienActions";
+import { alienFSMStates } from "./alienActions";
 
-const onUpdateMissile = (missileObj) => {
-  processMissileUpdate(missileObj);
-};
-
-const onUpdateBomb = (bombObj) => {
-  processBombUpdate(bombObj);
-};
+const _alienFSMStates = alienFSMStates();
 
 const processMissileUpdate = (missileObj) => {
   missileObj.coordinates.x += missileObj.velocity.x;
@@ -18,17 +12,28 @@ const processMissileUpdate = (missileObj) => {
   if (currentCell.length > 0) {
     const objectInCell = currentCell[0][0].gameObject;
     if (objectInCell && objectInCell.type) {   // e.g. not just an empty object ({})
-      missileObj.engine.eventSystem.dispatchEvent(objectInCell.id, {target: 'FSM', action: 'TRANSITION', state: alienCommonFSMStates.shot});
+      missileObj.engine.eventSystem.dispatchEvent(objectInCell.id, {target: 'FSM', action: 'TRANSITION', state: _alienFSMStates.shot});
       missileObj.disposable = true;
     }  
   }
   return;
-}
+};
+
+const onUpdateMissile = (missileObj) => {
+  processMissileUpdate(missileObj);
+};
 
 const processBombUpdate = (bombObj) => {
   // TODO
   return;
+};
+
+const onUpdateBomb = (bombObj) => {
+  processBombUpdate(bombObj);
+};
+
+export { 
+  onUpdateMissile, 
+  onUpdateBomb, 
+  testMissileCollision 
 }
-
-export { onUpdateMissile, onUpdateBomb, testMissileCollision };
-

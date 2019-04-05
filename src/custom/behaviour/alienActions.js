@@ -2,8 +2,6 @@
 // these functions will be bound into GameObject instances with .bind(this, this)
 // so remember to change this.state if/when needed
 
-// import { alienCommandShipConf } from '../model/aliens';
-
 const stateNames = {
   dying: 'dyingState',
   landed: 'landedState',
@@ -15,7 +13,7 @@ const stateNames = {
   hover: 'hoverState',
   strafe: 'strafeState',
   idle: 'idleState'
-}
+};
 
 const horizontalMove = {
   inc: 1,   // right
@@ -42,7 +40,6 @@ const moveInstructions = {
     horizontal: horizontalMove,
     vertical: verticalMove
   },
-
 };
 
 const nextAvailableCell = (alien, moveInstruction) => {
@@ -200,7 +197,7 @@ const shotState = {
   detectCollisions: false,
   execute: (alien) => {
     if (alien.isCommandShip) { 
-      if (alien.game.engine.phase == 3) {
+      if (alien.engine.phase == 3) {
         alien.fsm.transition(dyingState);
       }
     } else {
@@ -217,7 +214,7 @@ const strafeState = {
     // move left/right
     // drop bomb maybe
   }
-}
+};
 
 const idleState = {
   name: 'idleState',
@@ -230,64 +227,25 @@ const idleState = {
   }
 };
 
-const alienCommonFSMStates = {
-  shot: shotState
+const alienFSMStates = () => {
+  return {
+    idle: idleState,
+    hover: hoverState,
+    strafe: strafeState,
+    zigZagDive: zigZagDiveState,
+    zigZagClimb: zigZagClimbState,
+    shot: shotState,
+    landed: landedState,
+  }; 
 };
 
-const alienCommandShipFSMStates = {
-  idle: idleState,
-  strafe: strafeState,
-  shot: shotState,
-  default: idleState
-};
-
-const alienWarshipFSMStates = {
-  idle: idleState,
-  hover: hoverState,
-  strafe: strafeState,
-  shot: shotState,
-  default: hoverState
-};
-
-const alienFighterFSMStates = {
-  zigZagDive: zigZagDiveState,
-  zigZagClimb: zigZagClimbState,
-  strafe: strafeState,
-  landed: landedState,
-  shot: shotState,
-  default: strafeState
-};
-
-const alienCommandShipUpdate = (commandShipObject) => {
-  // TODO
-  if (commandShipObject.engine.phase == 3) {
-    if (commandShipObject.fsm) {
-      commandShipObject.fsm.execute();
-      return;
-    }
-  }
-}
-
-const alienWarshipUpdate = (warshipObject) => {
-  if (warshipObject.fsm) {
-    warshipObject.fsm.execute();
-    return;
-  }
-};
-
-const alienFighterUpdate = (fighterObject) => {
-  if (fighterObject.fsm) {
-    fighterObject.fsm.execute();
-    return;
+const alienUpdate = (alien) => {
+  if (alien.fsm) {
+    alien.fsm.execute();
   }
 };
 
 export { 
-  alienCommandShipUpdate, 
-  alienWarshipUpdate, 
-  alienFighterUpdate,
-  alienCommonFSMStates,
-  alienCommandShipFSMStates,
-  alienWarshipFSMStates,
-  alienFighterFSMStates
+  alienUpdate,
+  alienFSMStates
 };

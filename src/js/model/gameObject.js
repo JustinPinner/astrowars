@@ -102,26 +102,23 @@ GameObject.prototype.loadStatus = function() {
 GameObject.prototype.loadSprites = function() {
 	if (this.conf.sprites) {
 		for(let s in this.conf.sprites) {
-			const sprite = new Sprite(this.conf.sprites[s], this.coordinates, this.engine.images);
+			const sprite = new Sprite(this.conf.sprites[s], s, this.coordinates, this.engine.images);
 			this.sprites.push(sprite);
-			if (this.conf.sprites[s].isDefault) {
-				this.sprite = sprite;
-			}
 		}
 	}
 }
 
 GameObject.prototype.init = function() {
-	this.loadSprites();
+  this.loadSprites();
 	this.loadVertices();
 	this.loadCollisionCentres();
-	this.ready = true;
 	if (this.fsm) {
 		this.engine.eventSystem.registerEvent(`${this.id}FSM`);
 		this.engine.eventSystem.addEventListener(`${this.id}FSM`, this.fsm.eventListener.bind(this.fsm, this));
 		this.engine.eventSystem.dispatchEvent(`${this.id}FSM`, { action: 'SET', state: this.fsm.states.default });
 	}
 	this.engine.eventSystem.deRegisterEvent(`${this.id}-Loaded`);
+	this.ready = true;
 }
 
 GameObject.prototype.scaleWidth = function(dim) {
@@ -297,6 +294,8 @@ GameObject.prototype.draw = function() {
 	if (!this.ready) return;
 	if (!this.isOnScreen()) return;
 	if (this.disposable) return;
+
+  this.preDraw && this.preDraw();
 
   const viewport = this.engine.canvas('viewport');
   if (!viewport || !viewport.isReady) return;

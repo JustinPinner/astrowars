@@ -1,8 +1,55 @@
 
 const timing = {};
 
+const stateNames = {
+  baseFollow: 'baseFollow',
+  baseScroll: 'baseScroll',
+  playerBombed: 'playerBombed',
+  dockingSuccess: 'dockingComplete',
+  dockingFailed: 'dockingFailed'
+};
+
+const baseFollowState = {
+  name: stateNames.baseFollow,
+  nextStates: [stateNames.playerBombed, stateNames.baseScroll],
+  detectCollisions: true,
+  execute: (playerBase) => {
+		const playerCapsule = playerBase.engine.getObjectByType('playerCapsule');
+		if (playerCapsule && playerCapsule.currentCell && playerCapsule.currentCell.column != playerBase.currentCell.column) {
+			if (playerCapsule.currentCell.column < playerBase.currentCell.column) {
+				playerBase.moveLeft();
+			} else {
+				playerBase.moveRight();
+			}
+		}
+  }
+};
+
+const baseScrollState = {
+  name: 'baseScroll',
+  nextStates: [stateNames.dockingSuccess, stateNames.dockingFailed],
+  detectCollisions: true,
+  execute: (playerBase) => {
+    // move left/right
+    // drop bomb maybe
+  }
+};
+
+const playerBaseFSMStates = {
+  follow: baseFollowState,
+  scroll: baseScrollState,
+  default: baseFollowState
+};
+
 const onPlayerUpdate = (playerObj) => {
   processPlayerInputs(playerObj);
+};
+
+const playerBaseUpdate = (playerBaseObject) => {
+  if (playerBaseObject.fsm) {
+    playerBaseObject.fsm.execute();
+    return;
+  }
 };
 
 const canMove = () => {
@@ -60,4 +107,8 @@ const processPlayerInputs = (playerObj) => {
 
 };
 
-export { onPlayerUpdate };
+export { 
+  onPlayerUpdate,
+  playerBaseFSMStates,
+  playerBaseUpdate
+};

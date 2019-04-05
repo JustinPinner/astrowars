@@ -1,8 +1,9 @@
 import { Point2D } from '../lib/2d';
 
 class Sprite {
-  constructor(conf, point2d, imageService) {
+  constructor(conf, type, point2d, imageService) {
       this.conf = conf;
+      this.type = type;
       this.coordinates = point2d;
       this.width = this.conf.image ? this.conf.image.imageWidth : this.conf.sheet.frameWidth;
       this.height = this.conf.image ? this.conf.image.imageHeight : this.conf.sheet.frameHeight;

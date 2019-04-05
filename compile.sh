@@ -6,5 +6,7 @@ npm run build
 echo 'copying non-bundled images...'
 mkdir -p dist/assets
 cp assets/image/* dist/assets
+echo 'copying html...'
+cp html/* dist/.
 
 echo 'done!'

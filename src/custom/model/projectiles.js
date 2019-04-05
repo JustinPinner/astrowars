@@ -1,6 +1,7 @@
 import { onUpdateMissile, onUpdateBomb } from '../behaviour/projectileActions';
+import { CellBasedGameObject } from './cellBasedGameObject';
 
-const playerMissile = {
+const playerMissileConf = {
   type: 'missile',
   state: 'launched',
   initialVelocity: {
@@ -9,15 +10,26 @@ const playerMissile = {
   },
   width: 6,
   height: 8,
-  sprite: {
-    image: {
-      path: 'player-missile.png',
-      imageWidth: 3,
-      imageHeight: 4
-    }  
+  sprites: {
+    playerMissile: {
+      sheet: {
+        path: 'player-missile.png',
+        frameWidth: 3,
+        frameHeight: 4,
+        rows: 1,
+        columns: 1
+      },
+      isDefault: true  
+    }
   },
   update: onUpdateMissile
 };
+
+class PlayerMissile extends CellBasedGameObject {
+  constructor(position2d, engineRef) {
+    super(playerMissileConf, position2d, engineRef);
+  }
+}
 
 const alienBomb = {
   type: 'bomb',
@@ -38,4 +50,4 @@ const alienBomb = {
   update: onUpdateBomb
 };
 
-export { playerMissile, alienBomb };
+export { PlayerMissile, alienBomb };

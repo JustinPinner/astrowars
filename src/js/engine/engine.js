@@ -9,41 +9,55 @@ import GameObject from '../model/gameObject';
 import ImageService from '../utils/image';
 
 // default gameConfig object
-const defaultConfig = {
-  version: 0.0,
-  fps: 60,
-  canvasses: {},
-  touchUI: {},
-  enableTouchUI: 'auto',
-  enableKeyboardUI: false,
-  enableGamepadUI: false,
-  lifeCycle: {
-    setup: () => { return true; },
-    start: () => { return true; },
-    tick: () => { return true; }
+class DefaultConfig {
+  constructor() {
+    const _game = _gameConfig;
+    _game.lifeCycle = {
+      onSetup: onSetup,
+      onStart: onStart,
+      onTick: onTick
+    }
+    this.gameConfig = _game;
+    this.alienConfig = _alienConfig;
+  };
+  get game() {
+    return {
+      version: 0.0,
+      fps: 60,
+      canvasses: {},
+      touchUI: {},
+      enableTouchUI: 'auto',
+      enableKeyboardUI: false,
+      enableGamepadUI: false,
+      lifeCycle: {
+        setup: () => { return true; },
+        start: () => { return true; },
+        tick: () => { return true; }
+      }
+    };
   }
-};
+}
 
 class Engine {
-  constructor(gameConfig) {
+  constructor(customConfig, customLifecycle) {
     this.eventSystem = new Reactor();
-    this.config = gameConfig || defaultConfig;
+    this.config = (customConfig && new customConfig(customLifecycle)) || new DefaultConfig;
     this.images = new ImageService();
-    this.onSetup = this.config.lifeCycle.onSetup;
-    this.onStart = this.config.lifeCycle.onStart;
-    this.onTick = this.config.lifeCycle.onTick;
+    this.onSetup = this.config.game.lifeCycle.onSetup;
+    this.onStart = this.config.game.lifeCycle.onStart;
+    this.onTick = this.config.game.lifeCycle.onTick;
     this.player = null;
     this.loggedEvents = [];
     this.ticks = 0;   
     this.hasTouchSupport = (window.navigator && window.navigator.maxTouchPoints > 0);
     this.gameObjects = [];
     this.canvasses = [];
-    this.keyHandler = this.config.enableKeyboardUI ? new KeyHandler(this.config.keyProcessor) : undefined;
-    this.gamepadHandler = this.config.enableGamepadUI ? new GamepadHandler() : undefined;
-    this.touchHandler = (this.config.enableTouchUI === true || this.config.enableTouchUI === 'auto' && this.hasTouchSupport) ? new TouchHandler(this.config.touchUI) : undefined;
+    this.keyHandler = this.config.game.enableKeyboardUI ? new KeyHandler(this.config.game.keyProcessor) : undefined;
+    this.gamepadHandler = this.config.game.enableGamepadUI ? new GamepadHandler() : undefined;
+    this.touchHandler = (this.config.game.enableTouchUI === true || this.config.game.enableTouchUI === 'auto' && this.hasTouchSupport) ? new TouchHandler(this.config.game.touchUI) : undefined;
     this.timing = {};
-    for (const cnv in this.config.canvasses) {
-      const canvas = new Canvas2D(this.config.canvasses[cnv], this);
+    for (const cnv in this.config.game.canvasses) {
+      const canvas = new Canvas2D(this.config.game.canvasses[cnv], this);
       if (canvas) {
         this.canvasses.push(canvas);
       }
@@ -66,6 +80,7 @@ class Engine {
         },
         alias: 'canvas',  
       }, this);
+      this.canvasses.push(canvas);
     }
   }
 
@@ -163,7 +178,7 @@ Engine.prototype.registerObject = function(gameObject) {
     gameObject.id = uuidv4();  
   }
   if (this.getObjectById(gameObject.id)) {
-    // object doesn't exist
+    // object exists
     return false;
   }
   this.gameObjects.push(gameObject);
