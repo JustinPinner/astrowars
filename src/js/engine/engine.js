@@ -294,6 +294,18 @@ Engine.prototype.tick = function() {
   const deadAndAlive = partition(this.gameObjects, function(obj) {
     return obj.TTL ? obj.TTL <= 0 : obj.disposable;
   });
+
+  // clean out event listeners for dead objects
+  for (const obj in deadAndAlive[0]) {
+    const gameObject = deadAndAlive[0][obj];
+    if (this.eventSystem.events[`${gameObject.id}`]) {
+      this.eventSystem.deRegisterEvent(`${gameObject.id}`);
+    }
+    if (this.eventSystem.events[`${gameObject.id}FSM`]) {
+      this.eventSystem.deRegisterEvent(`${gameObject.id}FSM`);
+    }
+  }
+
   this.gameObjects = deadAndAlive[1];
   for (const obj in this.gameObjects) {
     const gameObject = this.gameObjects[obj];

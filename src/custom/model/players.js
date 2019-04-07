@@ -21,7 +21,7 @@ PlayerCapsule.prototype.shoot = function() {
 	// we can only fire one shot at a time
 	const playerShot = this.engine.getObjectByType('missile');
 	if (!playerShot) {
-    const missile = new PlayerMissile(new Point2D(0,0), this.engine);
+    const missile = new PlayerMissile(this.engine);
     const launchPosition = {
 			x: this.coordinates.x + (this.width / 2) - (missile.width / 2), 
 			y: this.coordinates.y

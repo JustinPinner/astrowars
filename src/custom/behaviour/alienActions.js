@@ -187,6 +187,9 @@ const hoverState = {
     if (freeCell) {
       alien.moveToCell(freeCell);
     }
+    if (Math.random() * 100 > 75) {
+      alien.fsm.transition(strafeState);
+    }
     return;
   }
 };
@@ -210,9 +213,18 @@ const strafeState = {
   name: 'strafeState',
   nextStates: [stateNames.shot],
   detectCollisions: true,
+  minimumExecutionInterval: 500,
   execute: (alien) => {
     // move left/right
+    const freeCell = nextAvailableCell(alien, moveInstructions.leftRight);
+    if (freeCell) {
+      alien.moveToCell(freeCell);
+    }
     // drop bomb maybe
+    if (Math.random() * 100 > 50) {
+      alien.shoot();
+    }
+    return;
   }
 };
 

@@ -1,4 +1,4 @@
-// https://stackoverflow.com/questions/15308371/custom-events-model-without-using-dom-events-in-javascript
+// from: https://stackoverflow.com/questions/15308371/custom-events-model-without-using-dom-events-in-javascript
 
 class Event {
   constructor(name){

@@ -24,7 +24,20 @@ const onUpdateMissile = (missileObj) => {
 };
 
 const processBombUpdate = (bombObj) => {
-  // TODO
+  bombObj.coordinates.x += bombObj.velocity.x;
+  bombObj.coordinates.y += bombObj.velocity.y;  
+  if (!bombObj.isOnScreen()) {
+    bombObj.disposable = true;
+  }
+  const currentCell = bombObj.engine.gameBoard.cellFromCoordinates(bombObj.coordinates);
+  if (currentCell.length > 0) {
+    const objectInCell = currentCell[0][0].gameObject;
+    if (objectInCell && objectInCell.type && objectInCell.type == 'player') {   // e.g. not just an empty object ({})
+      // TODO: players don't have an FSM - need to send them a die now message instead  
+      // bombObj.engine.eventSystem.dispatchEvent(objectInCell.id, {target: 'FSM', action: 'TRANSITION', state: _alienFSMStates.shot});
+      bombObj.disposable = true;
+    }  
+  }
   return;
 };
 

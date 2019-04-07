@@ -20,7 +20,7 @@ import {
 } from './behaviour/alienActions';
 import { 
   PlayerMissile, 
-  alienBomb 
+  AlienBomb 
 } from './model/projectiles';
 
 const alienTypes = {
@@ -206,7 +206,7 @@ const _gameConfig = () => {
       players: PlayerCapsule.type,
       aliens: _alienConfig,
       missiles: PlayerMissile.type,
-      bombs: alienBomb
+      bombs: AlienBomb.type
     },
     enableTouchUI: 'auto',
     touchUI: {

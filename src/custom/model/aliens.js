@@ -1,5 +1,6 @@
 
 import { CellBasedGameObject } from '../model/cellBasedGameObject';
+import { AlienBomb } from '../model/projectiles';
 
 const alienEventListener = (thisObj, evt) => {
   switch (evt.action) {
@@ -59,6 +60,20 @@ Alien.prototype.selectSprite = function(cell) {
       }
     }
   }
+}
+
+Alien.prototype.shoot = function() {
+	// aliens can drop up to 3 bombs (betweenn all of them)
+	const alienBomb = this.engine.getObjectsByType('bomb');
+	if (!alienBomb || alienBomb.length < 3) {
+    const bomb = new AlienBomb(this.engine);
+    const launchPosition = {
+			x: this.coordinates.x + (this.width / 2) - (bomb.width / 2), 
+			y: this.coordinates.y
+    };
+    bomb.coordinates = launchPosition;
+    this.engine.registerObject(bomb);
+	}
 }
 
 export { 
