@@ -2,8 +2,8 @@
 class FSM {
 	constructor(host, states) {
     this.host = host;
-    this.states = states;
-    this.currentState = undefined;
+    this.states = states.__proto__.hasOwnProperty('apply') ? states() : states;
+    this.currentState = this.states.default;
     this.lastTransitionTime = undefined;
     this.lastExecutionTime = undefined;
   }
@@ -46,22 +46,33 @@ FSM.prototype.execute = function() {
 	}
 }
 
+FSM.prototype.pushState = function () {
+  this.savedState = this.currentState;
+}
+
+FSM.prototype.popState = function() {
+  this.currentState = this.savedState;
+  this.savedState = undefined;
+}
+
 FSM.prototype.setState = function(newState) {
   if (!this.host) {
     return;
   }
+  const now = Date.now();
   this.currentState = newState;
-  this.lastTransitionTime = Date.now();
+  this.lastTransitionTime = now;
+  this.startTime = now;
   this.lastExecutionTime = undefined;
 }
 
 FSM.prototype.transition = function(newState) {
-  if (this.currentState && this.currentState.nextStates.includes(newState.name)) {
-   this.setState(newState);
- }
- if (newState.executeOnTransition) {
-   this.execute();
- }
+  if (this.currentState && this.currentState.nextStates.includes(newState.name) || newState.force) {
+    this.setState(newState);
+    if (newState.executeOnTransition) {
+      this.execute();
+    }
+  }
 }
 
 export { FSM };

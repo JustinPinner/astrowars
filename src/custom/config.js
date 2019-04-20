@@ -3,11 +3,15 @@ import {
   PlayerCapsule,
   PlayerBase
 } from './model/players';
+import {
+  Alien
+} from './model/aliens';
 import { 
   Keys 
 } from '../js/ui/keys';
 import { 
-  onPlayerUpdate, 
+  onPlayerUpdate,
+  playerCapsuleFSMStates, 
   playerBaseFSMStates, 
   playerBaseUpdate 
 } from './behaviour/playerActions';
@@ -27,6 +31,25 @@ const alienTypes = {
   commandShip: 'commandShip',
   warship: 'warship',
   fighter: 'fighter'
+};
+
+const _phases = () => {
+  return {
+    1: {
+      name: 'firstWave',
+      commandShips: 0,
+      aliens: 30
+    },
+    2: {
+      name: 'commandShips',
+      commandShips: 3,
+      aliens: 0
+    },
+    3: {
+      name: 'dockingBonus',
+      maxBonus: 1000
+    }
+  }
 };
 
 const _playerCapsuleConfig = () => {
@@ -66,7 +89,10 @@ const _playerCapsuleConfig = () => {
           minInterval: 1000
       }
     },
-    update: onPlayerUpdate
+    fsmStates: playerCapsuleFSMStates,
+    update: onPlayerUpdate,
+    startRow: 1,
+    startColumn: 2
   };
 }
 
@@ -93,7 +119,9 @@ const _playerBaseConfig = () => {
       }
     },
     fsmStates: playerBaseFSMStates,
-    update: playerBaseUpdate
+    update: playerBaseUpdate,
+    startRow: 0,
+    startColumn: 2
   };
 };
 
@@ -140,6 +168,15 @@ const _alienConfig = () => {
           fromRow: 2,
           toRow: 6 
         }  
+      }
+    },
+    soundEffects: {
+      'die': {
+        id: 'alienDie',
+        type: 'sawtooth',
+        frequency: 3200,
+        volume: 1.0,
+        duration: 80  
       }
     },
     fsmStates: alienFSMStates(),
@@ -208,6 +245,7 @@ const _gameConfig = () => {
       missiles: PlayerMissile.type,
       bombs: AlienBomb.type
     },
+    phases: _phases,
     enableTouchUI: 'auto',
     touchUI: {
       x: ((window.innerWidth / 2) - (300 / 2)),
@@ -223,7 +261,98 @@ const _gameConfig = () => {
       // onSetup: onSetup,
       // onStart: onStart,
       // onTick: onTick
-    }  
+    },
+    eventListener: (engine, evt) => {
+      if (evt && evt.action) {
+        switch (evt.action) {
+          case 'ADDPLAYERPOINTS': 
+            engine.playerPoints = engine.playerPoints ? engine.playerPoints += evt.value : evt.value ;
+            break;
+
+          case 'PLAYERHIT':
+            for (const obj in engine.objects) {
+              const gameObject = engine.objects[obj];
+              if (gameObject.isAlien && gameObject.fsm) {
+                gameObject.fsm.pushState();
+                gameObject.fsm.transition(gameObject.fsm.states.pause);
+              }
+              if (gameObject.isPlayer && gameObject.fsm) {
+                gameObject.fsm.transition(gameObject.fsm.states.flash);
+              }
+              if (gameObject.isProjectile) {
+                gameObject.disposable = true;
+              }
+            }
+            break;
+
+          case 'ALIENDEATH':
+            if (engine.spawnedAliens && engine.spawnedAliens < engine.config.phases()[engine.phase].aliens) {
+              // spawn a new warship object
+              const conf = engine.config.warship;
+              let row = Math.floor((engine.gameBoard.rows - 4) + (Math.random() * 2));
+              let col = Math.floor(Math.random() * engine.gameBoard.columns);
+              // test if this [row][col] position is already occupied by a game object
+              while(engine.gameBoard.board[row][col].gameObject.id) {
+                row = Math.floor((engine.gameBoard.rows - 5) + (Math.random() * 2));
+                col = Math.floor(Math.random() * engine.gameBoard.columns);
+              }
+              conf.width = engine.gameBoard.board[row][col].width;
+              conf.height = engine.gameBoard.board[row][col].height;
+              conf.fsmStates.default = conf.fsmStates['hover'];
+              const spawnPos = {
+                x: engine.gameBoard.board[row][col].x,
+                y: engine.gameBoard.board[row][col].y
+              };
+              engine.gameBoard.board[row][col].gameObject = new Alien(conf, spawnPos, engine);          
+            }
+            break;
+
+          case 'PLAYERRESPAWN':
+            // TODO!
+            for (const obj in engine.objects) {
+              const gameObject = engine.objects[obj];
+              if (gameObject.isPlayer) {
+                const currentCell = gameObject.currentCell;
+                if (currentCell.row != gameObject.conf.startRow || currentCell.column != gameObject.conf.startColumn) {
+                  // reset row/column
+                  engine.gameBoard.board[gameObject.currentCell.row][gameObject.currentCell.column].gameObject = {};
+                  engine.gameBoard.board[gameObject.conf.startRow][gameObject.conf.startColumn].gameObject = gameObject;
+                  gameObject.coordinates.x = engine.gameBoard.board[gameObject.conf.startRow][gameObject.conf.startColumn].x;
+                  gameObject.coordinates.y = engine.gameBoard.board[gameObject.conf.startRow][gameObject.conf.startColumn].y;
+                }
+                gameObject.canDraw = true;
+                engine.eventSystem.dispatchEvent(gameObject.id, {target: 'FSM', action: 'SET', state: gameObject.fsm.states.live});
+                if (gameObject.isPlayerCapsule) {
+                  engine.eventSystem.dispatchEvent(engine.id, {action: 'RESUMEPLAY'});
+                } 
+              }             
+            }
+            break;
+          
+          case 'RESUMEPLAY':
+            for (const obj in engine.objects) {
+              const gameObject = engine.objects[obj];
+              if (gameObject.fsm && gameObject.fsm.savedState) {
+                gameObject.fsm.popState();
+              }
+            }
+            break;
+
+          case 'PLAYSOUND':
+            if (evt && evt.value) {
+              engine.audioSystem.playEffect(evt.value.id);
+            }
+        }
+      }
+      
+      if (evt && evt.callback) {
+        if (evt.callbackArgs) {
+          evt.callback(evt.callbackArgs);
+        } else {
+          evt.callback();
+        }
+      }
+    }
   };
 };
 
@@ -234,7 +363,7 @@ class CustomConfig {
       onSetup: customLifecycle.onSetup,
       onStart: customLifecycle.onStart,
       onTick: customLifecycle.onTick
-    }
+    };
   };
   get game() {
     return this._game;
@@ -260,6 +389,13 @@ class CustomConfig {
     conf.type = alienTypes.fighter;
     return conf;
   };
+  get phases() {
+    return this._game.phases;
+  };
+}
+
+CustomConfig.prototype.phase = function(phaseNumber) {
+  return this.phases[phaseNumber];
 }
 
 export {

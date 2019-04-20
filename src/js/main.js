@@ -12,6 +12,8 @@ import '../css/game.css';
 
 const onSetup = (gameEngine) => {
   // write your custom setup code here - runs after gameEngine's default setup
+  gameEngine.playerLives = 5;
+  gameEngine.score = 0;
   gameEngine.level = 1;
   gameEngine.phase = 1;
   const rows = 11;
@@ -24,11 +26,11 @@ const onSetup = (gameEngine) => {
   // initialise the gameBoard array in reverse row order
   // note that row 0 has a greater screen y (vertical) 
   // value than row 1, which itself is greater than 2 etc
-  for (let r = gameEngine.gameBoard.rows - 1; r > -1; r -= 1) {
+  for (let r = 0; r < gameEngine.gameBoard.rows; r += 1) {  
     let row = [];
     for (let c = 0; c < gameEngine.gameBoard.columns; c += 1) {
       const x = Math.floor(colWidth * c);
-      const y = Math.floor(rowHeight * r);
+      const y = Math.floor(rowHeight * ((gameEngine.gameBoard.rows - 1) - r));
       row.push({
         row: r,
         column: c,
@@ -44,9 +46,9 @@ const onSetup = (gameEngine) => {
 
   // adjust the geometry of the player graphic to fit the gameBoard's dimensions
   // and prepare the player's starting row and column
-  const playerCapsuleRow = 1;
-  const playerColumn = 2;
   const playerCapsuleConfig = gameEngine.config.playerCapsule;
+  const playerCapsuleRow = playerCapsuleConfig.startRow;
+  const playerColumn = playerCapsuleConfig.startColumn;
 
   gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].gameObject = new PlayerCapsule(
     playerCapsuleConfig,
@@ -61,14 +63,15 @@ const onSetup = (gameEngine) => {
   // it will follow the capsule's column during combat play and switches to
   // sideways scrolling during the re-docking phase. It never leaves row 0 though.
   // The switching of modes is managed by the base object's finite state machine.
-  const playerBaseRow = playerCapsuleRow - 1;
   const playerBaseConfig = gameEngine.config.playerBase;
+  const playerBaseRow = playerBaseConfig.startRow;
+  const playerBaseColumn = playerBaseConfig.startColumn;
  
   gameEngine.gameBoard.board[playerBaseRow][playerColumn].gameObject = new PlayerBase(
     playerBaseConfig,
     {
-      x: gameEngine.gameBoard.board[playerBaseRow][playerColumn].x, 
-      y: gameEngine.gameBoard.board[playerBaseRow][playerColumn].y
+      x: gameEngine.gameBoard.board[playerBaseRow][playerBaseColumn].x, 
+      y: gameEngine.gameBoard.board[playerBaseRow][playerBaseColumn].y
     },
     gameEngine
   );
@@ -84,7 +87,7 @@ const onSetup = (gameEngine) => {
     conf.width = gameEngine.gameBoard.board[commandShipRow][c].width;
     conf.height = gameEngine.gameBoard.board[commandShipRow][c].height;
     // set the alien's default behaviour
-    conf.fsmStates.default = conf.fsmStates["idle"];
+    conf.fsmStates.default = conf.fsmStates['idle'];
     gameEngine.gameBoard.board[commandShipRow][c].gameObject = new Alien(conf, spawnPos, gameEngine);
   }
 
@@ -101,12 +104,13 @@ const onSetup = (gameEngine) => {
     }
     conf.width = gameEngine.gameBoard.board[row][col].width;
     conf.height = gameEngine.gameBoard.board[row][col].height;
-    conf.fsmStates.default = conf.fsmStates["hover"];
+    conf.fsmStates.default = conf.fsmStates['hover'];
     const spawnPos = {
       x: gameEngine.gameBoard.board[row][col].x,
       y: gameEngine.gameBoard.board[row][col].y
     };
     gameEngine.gameBoard.board[row][col].gameObject = new Alien(conf, spawnPos, gameEngine);
+    gameEngine.spawnedAliens = gameEngine.spawnedAliens ? gameEngine.spawnedAliens + 1 : 1;
   }  
   
   // pre-load heavy images

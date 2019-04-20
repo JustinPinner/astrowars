@@ -26,9 +26,18 @@ const playerMissileConf = {
   update: onUpdateMissile
 };
 
-class PlayerMissile extends CellBasedGameObject {
+class Projectile extends CellBasedGameObject {
+  constructor(engineRef, conf, position2d) {
+    super(conf, (position2d || new Point2D(0,0)), engineRef);
+  }
+  get isProjectile() {
+    return true;
+  }
+}
+
+class PlayerMissile extends Projectile {
   constructor(engineRef, position2d) {
-    super(playerMissileConf, (position2d || new Point2D(0,0)), engineRef);
+    super(engineRef, playerMissileConf, (position2d || new Point2D(0,0)));
   }
 }
 
@@ -37,7 +46,7 @@ const alienBombConf = {
   state: 'dropped',
   initialVelocity: {
     x: 0,
-    y: 8
+    y: 6
   },
   width: 6,
   height: 8,
@@ -56,9 +65,9 @@ const alienBombConf = {
   update: onUpdateBomb
 };
 
-class AlienBomb extends CellBasedGameObject {
+class AlienBomb extends Projectile {
   constructor(engineRef, position2d) {
-    super(alienBombConf, (position2d || new Point2D(0,0)), engineRef);
+    super(engineRef, alienBombConf, (position2d || new Point2D(0,0)));
   }
 }
 

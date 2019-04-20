@@ -1,5 +1,6 @@
 const uuidv4 = require('uuid/v4');
 import Reactor from '../lib/events';
+import { Audio } from '../lib/audio';
 import Canvas2D from '../environment/canvas';
 import { TouchInterface, TouchHandler } from '../ui/touch';
 import KeyHandler from '../ui/keys';
@@ -23,7 +24,7 @@ class DefaultConfig {
   get game() {
     return {
       version: 0.0,
-      fps: 60,
+      fps: 30,
       canvasses: {},
       touchUI: {},
       enableTouchUI: 'auto',
@@ -33,6 +34,11 @@ class DefaultConfig {
         setup: () => { return true; },
         start: () => { return true; },
         tick: () => { return true; }
+      },
+      eventListener: (thisObj, evt) => {
+        if (evt.callback) {
+          evt.callback(thisObj, evt);
+        }
       }
     };
   }
@@ -40,9 +46,13 @@ class DefaultConfig {
 
 class Engine {
   constructor(customConfig, customLifecycle) {
+    this.id = 'ENGINE';
     this.eventSystem = new Reactor();
+    this.audioSystem = new Audio();
     this.config = (customConfig && new customConfig(customLifecycle)) || new DefaultConfig;
     this.images = new ImageService();
+		this.eventSystem.registerEvent(this.id);
+		this.eventSystem.addEventListener(this.id, this.config.game.eventListener.bind(this, this));
     this.onSetup = this.config.game.lifeCycle.onSetup;
     this.onStart = this.config.game.lifeCycle.onStart;
     this.onTick = this.config.game.lifeCycle.onTick;
@@ -90,43 +100,13 @@ class Engine {
     return this.canvasses.filter(function(canvas){return canvas.isReady;}).length == this.canvasses.length;
   }
 
-  // get localPlayer() {
-  //   return this._localPlayer;
-  // }
-
-  // get maxSpawnDistanceX() {
-  //   return (this.canvas('viewport').width / 2) * MAX_SPAWN_SCREENS_WIDE;
-  // }
-
-  // get maxSpawnDistanceY() {
-  //   return (this.canvas('viewport').height / 2) * MAX_SPAWN_SCREENS_HIGH;
-  // }
-
-  // get despawnRange() {
-  //   const maxX = this.maxSpawnDistanceX * 2;
-  //   const maxY = this.maxSpawnDistanceY * 2
-  //   return Math.sqrt((maxX * maxX)+(maxY * maxY));
-  // }
-
   get objects() {
     return this.gameObjects;
   }
 
-  // get keys() {
-  //   return this.keyHandler;
-  // }
-
   get gamepad() {
     return this.gamepadHandler.gamepad;
   }
-
-  // get touch() {
-  //   return this.hasTouchSupport;
-  // }
-
-  // get touchHandler() {
-  //   return this.hasTouchSupport && this._touchInterface.touchHandler;
-  // }
 
   /* setters */
 
@@ -169,7 +149,6 @@ Engine.prototype.refreshUi = function() {
 
 Engine.prototype.createObject = function(conf, position) {
   const gameObject = new GameObject(conf, position, this);
-  // this.gameObjects.push(gameObject);
   return gameObject;  
 }
 
@@ -244,6 +223,10 @@ Engine.prototype.setup = function() {
     }
   }
   
+  for (effect in this.config.game.soundEffects) {
+    this.audioSystem.addEffect(new AudioEffect(this.config.game.soundEffects[effect]));
+  }
+
   for(const cnv in this.canvasses) {
     this.canvasses[cnv].init && this.canvasses[cnv].init();
   }

@@ -1,12 +1,16 @@
 const uuidv4 = require('uuid/v4');
 import { Vector2D, Point2D } from '../lib/2d';
 import { FSM } from '../lib/fsm';
+import { AudioEffect } from '../lib/audio';
 import Sprite from '../model/sprite';
 import { debug } from 'util';
 
 class GameObject {
 	constructor(conf, position, engine) {
-		this.engine = engine;
+    this.engine = engine;
+		this.ready = false;
+    this.disposable = false;
+    this.drawable = false;    
 		this.id = uuidv4();
 		this.engine.eventSystem.registerEvent(`${this.id}-Loaded`);
 		this.engine.eventSystem.addEventListener(`${this.id}-Loaded`, this.init.bind(this));
@@ -20,14 +24,13 @@ class GameObject {
 		this.width = this.conf.width;
 		this.height = this.conf.height;
 		this.vertices = [];
-    this.sprites = [];	// will be loaded during the init call triggered by the xxx-Loaded event
+    this.sprites = [];	    // --|\ will be loaded during the init call triggered 
+    this.soundEffects = []; // --|/ by the xxx-Loaded event
     this.scale = this.conf.scale;
 		this.mass = this.conf.mass;
     this.collisionCentres = this.conf.collisionCentres;
 		this.rotation = 0;
 		this.update = conf.update.bind(this, this);
-		this.ready = true;
-		this.disposable = false;
 		this.fsm = conf.fsmStates ? new FSM(this, conf.fsmStates) : undefined;
 		this.engine.eventSystem.registerEvent(`${this.id}`);
 		this.engine.eventSystem.addEventListener(`${this.id}`, this.eventListener.bind(this, this));
@@ -53,7 +56,13 @@ class GameObject {
 		}
 		const rotated = this.coordinates.rotate(this.centre, degrees);
 		return rotated;
-	}
+  }
+  get canDraw() {
+    return this.drawable;
+  }
+  set canDraw(boolValue) {
+    this.drawable = boolValue;
+  }
 }
 
 GameObject.prototype.eventListener = function (thisObj, evt) { 
@@ -108,17 +117,27 @@ GameObject.prototype.loadSprites = function() {
 	}
 }
 
+GameObject.prototype.loadSoundEffects = function() {
+  for (let e in this.conf.soundEffects) {
+    const effectConf = this.conf.soundEffects[e];
+    const audioEffect = new AudioEffect(effectConf);
+    this.engine.audioSystem.addEffect(audioEffect);
+    this.soundEffects.push(audioEffect);
+  }
+}
+
 GameObject.prototype.init = function() {
   this.loadSprites();
 	this.loadVertices();
-	this.loadCollisionCentres();
+  this.loadCollisionCentres();
+  this.loadSoundEffects();
 	if (this.fsm) {
 		this.engine.eventSystem.registerEvent(`${this.id}FSM`);
 		this.engine.eventSystem.addEventListener(`${this.id}FSM`, this.fsm.eventListener.bind(this.fsm, this));
-		this.engine.eventSystem.dispatchEvent(`${this.id}FSM`, { action: 'SET', state: this.fsm.states.default });
 	}
 	this.engine.eventSystem.deRegisterEvent(`${this.id}-Loaded`);
-	this.ready = true;
+  this.ready = true;
+  this.canDraw = true;
 }
 
 GameObject.prototype.scaleWidth = function(dim) {
@@ -294,6 +313,7 @@ GameObject.prototype.draw = function() {
 	if (!this.ready) return;
 	if (!this.isOnScreen()) return;
 	if (this.disposable) return;
+  if (!this.canDraw) return;
 
   this.preDraw && this.preDraw();
 

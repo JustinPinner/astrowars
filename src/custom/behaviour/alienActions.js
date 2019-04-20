@@ -12,7 +12,10 @@ const stateNames = {
   shot: 'shotState',
   hover: 'hoverState',
   strafe: 'strafeState',
-  idle: 'idleState'
+  idle: 'idleState',
+  pause: 'pauseState',
+  resume: 'resumeState',
+  flash: 'flashState'
 };
 
 const horizontalMove = {
@@ -199,11 +202,11 @@ const shotState = {
   nextStates: [stateNames.dying],
   detectCollisions: false,
   execute: (alien) => {
-    if (alien.isCommandShip) { 
-      if (alien.engine.phase == 3) {
-        alien.fsm.transition(dyingState);
-      }
-    } else {
+    const engine = alien.engine;
+    if (!alien.isCommandShip || (alien.isCommandShip && engine.phase == 3)) { 
+      engine.eventSystem.dispatchEvent(engine.id, {action: 'PLAYSOUND', value: (alien.conf.soundEffects ? alien.conf.soundEffects['die'] : engine.defaultSoundEffects['die'])});
+      engine.eventSystem.dispatchEvent(engine.id, {action: 'ADDPLAYERPOINTS', value: alien.pointsValue});
+      engine.eventSystem.dispatchEvent(engine.id, {action: 'ALIENDEATH', value: alien.type});
       alien.fsm.transition(dyingState);
     }
   }
@@ -239,6 +242,47 @@ const idleState = {
   }
 };
 
+const pauseState = {
+  name: 'pauseState',
+  nextStates: [stateNames.resume],
+  detectCollision: false,
+  processUpdates: false,
+  force: true,
+  execute: (alien) => {}
+};
+
+const resumeState = {
+  name: 'resumeState',
+  nextStates: [stateNames.hover, stateNames.strafe, stateNames.idle],
+  detectCollisions: true,
+  processUpdates: true,
+  execute: (alien) => {
+    // if (alien.savedState && nextStates.includes(alien.savedState.name)) {
+    //   alien.fsm.transition(alien.savedState);
+    //   alien.savedState = undefined;
+    // } else {
+    //   alien.fsm.transition(alien.fsm.states.default)
+    // }
+  }
+}
+
+const flashState = {
+  name: 'flashState',
+  nextStates: [stateNames.dying],
+  detectCollisions: false,
+  processUpdates: false,
+  minimumExecutionInterval: 500,
+  minimumStateDuration: 3000,
+  execute: (alien) => {
+    if ((alien.fsm.currentState.minimumStateDuration || 0) <= alien.fsm.currentState.lastExecutionTime - alien.fsm.currentState.startTime) {
+      // we've done our time, transition to next state
+      alien.fsm.transition(alien.fsm.states[stateNames.dying]);
+    }
+    // invert drawable state
+    alien.canDraw = !alien.canDraw;
+  }
+}
+
 const alienFSMStates = () => {
   return {
     idle: idleState,
@@ -248,6 +292,9 @@ const alienFSMStates = () => {
     zigZagClimb: zigZagClimbState,
     shot: shotState,
     landed: landedState,
+    pause: pauseState,
+    resume: resumeState,
+    flash: flashState
   }; 
 };
 

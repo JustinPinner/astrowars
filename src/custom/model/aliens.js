@@ -19,6 +19,9 @@ class Alien extends CellBasedGameObject {
   constructor(conf, position, engine) {
     super(conf, position, engine);
   }
+  get isAlien() {
+    return true;
+  }
   get isCommandShip() {
     return this.type == this.engine.config.commandShip.type;
   }
@@ -27,6 +30,17 @@ class Alien extends CellBasedGameObject {
   }
   get isFighter() {
     return this.type == this.engine.config.fighter.type;
+  }
+  get pointsValue() {
+    if (this.isCommandShip) {
+      return 50;
+    }
+    if (this.isWarship) {
+      return 20;
+    }
+    if (this.isFighter) {
+      return 30;
+    }
   }
 } 
 

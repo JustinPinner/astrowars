@@ -1,4 +1,5 @@
-import { alienFSMStates } from "./alienActions";
+import { alienFSMStates } from './alienActions';
+import { playerCapsuleFSMStates } from './playerActions';
 
 const _alienFSMStates = alienFSMStates();
 
@@ -23,6 +24,8 @@ const onUpdateMissile = (missileObj) => {
   processMissileUpdate(missileObj);
 };
 
+const _playerCapsuleFSMStates = playerCapsuleFSMStates();
+
 const processBombUpdate = (bombObj) => {
   bombObj.coordinates.x += bombObj.velocity.x;
   bombObj.coordinates.y += bombObj.velocity.y;  
@@ -32,11 +35,10 @@ const processBombUpdate = (bombObj) => {
   const currentCell = bombObj.engine.gameBoard.cellFromCoordinates(bombObj.coordinates);
   if (currentCell.length > 0) {
     const objectInCell = currentCell[0][0].gameObject;
-    if (objectInCell && objectInCell.type && objectInCell.type == 'player') {   // e.g. not just an empty object ({})
-      // TODO: players don't have an FSM - need to send them a die now message instead  
-      // bombObj.engine.eventSystem.dispatchEvent(objectInCell.id, {target: 'FSM', action: 'TRANSITION', state: _alienFSMStates.shot});
+    if (objectInCell && objectInCell.type && objectInCell.isPlayer) {
+      bombObj.engine.eventSystem.dispatchEvent(objectInCell.id, {target: 'FSM', action: 'TRANSITION', state: _playerCapsuleFSMStates.hit});
       bombObj.disposable = true;
-    }  
+    }
   }
   return;
 };

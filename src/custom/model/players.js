@@ -1,15 +1,48 @@
 
 import { PlayerMissile } from '../model/projectiles';
 import { CellBasedGameObject } from '../model/cellBasedGameObject';
-import { Point2D } from '../../js/lib/2d';
 
-class PlayerCapsule extends CellBasedGameObject {
+const playerCapsuleEventListener = (thisObj, evt) => {
+  if (evt.target && evt.target == 'FSM' && evt.state) {
+    if (evt.action && evt.action == 'SET') {
+      thisObj.fsm.setState(evt.state);  
+    } else {
+      thisObj.fsm.transition(evt.state);
+    }  
+  } else {
+    switch (evt.action) {
+      case 'DIE':
+        thisObj.fsm.transition(thisObj.fsm.states.capsuleHit)
+        break;
+      default:
+        break;      
+    }  
+  }
+};
+ 
+class Player extends CellBasedGameObject {
+  constructor(conf, position, engine) {
+    super(conf, position, engine);
+  }
+  get isPlayer() {
+    return true;
+  }
+}
+
+class PlayerCapsule extends Player {
   constructor(conf, position, engine) {
 		super(conf, position, engine);
 		if (this.sprite) {
 			this.sprite.frame = 2;
 		}
-	}
+  }
+  get isPlayerCapsule() {
+    return true;
+  }
+}
+
+PlayerCapsule.prototype.eventListener = function (thisObj, evt) {
+  playerCapsuleEventListener(thisObj, evt);
 }
 
 PlayerCapsule.prototype.selectSprite = function(cell) {
@@ -44,13 +77,16 @@ const playerBaseEventListener = (thisObj, evt) => {
   }
 };
 
-class PlayerBase extends CellBasedGameObject {
+class PlayerBase extends Player {
 	constructor(conf, position, engine) {
     super(conf, position, engine);
 		if (this.sprite) {
 			this.sprite.frame = 0;
 		}
-	}
+  }
+  get isPlayerBase() {
+    return true;
+  }
 }
 
 PlayerBase.prototype.eventListener = function (thisObj, evt) {
