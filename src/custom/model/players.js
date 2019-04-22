@@ -61,6 +61,7 @@ PlayerCapsule.prototype.shoot = function() {
     };
     missile.coordinates = launchPosition;
     this.engine.registerObject(missile);
+    this.engine.eventSystem.dispatchEvent(this.engine.id, {action: 'PLAYSOUND', value: (this.conf.soundEffects ? this.conf.soundEffects['shoot'] : engine.defaultSoundEffects['shoot'])});
 	}
 }	
 

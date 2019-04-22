@@ -89,6 +89,22 @@ const _playerCapsuleConfig = () => {
           minInterval: 1000
       }
     },
+    soundEffects: {
+      'shoot': {
+        id: 'playerShoot',
+        type: 'sawtooth',
+        frequency: 2800,
+        volume: 1.0,
+        duration: 80  
+      },
+      'die': {
+        id: 'playerDie',
+        type: 'sawtooth',
+        frequency: 800,
+        volume: 1.0,
+        duration: 120  
+      }
+    },
     fsmStates: playerCapsuleFSMStates,
     update: onPlayerUpdate,
     startRow: 1,

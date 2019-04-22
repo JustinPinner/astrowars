@@ -113,7 +113,9 @@ const capsuleHitState = {
   processPlayerInputs: false,
   execute: (playerCapsule) => {
     // TODO:
-    playerCapsule.engine.eventSystem.dispatchEvent(playerCapsule.engine.id, {action: "PLAYERHIT"});
+    const engine = playerCapsule.engine;
+    engine.eventSystem.dispatchEvent(engine.id, {action: 'PLAYSOUND', value: (playerCapsule.conf.soundEffects ? playerCapsule.conf.soundEffects['die'] : engine.defaultSoundEffects['die'])});
+    engine.eventSystem.dispatchEvent(engine.id, {action: "PLAYERHIT"});
     // transition to flash state
     playerCapsule.fsm.transition(playerCapsule.fsm.states.flash);
   }
