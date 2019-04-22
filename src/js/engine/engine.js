@@ -9,20 +9,9 @@ import partition from '../lib/partition';
 import GameObject from '../model/gameObject';
 import ImageService from '../utils/image';
 
-// default gameConfig object
-class DefaultConfig {
-  constructor() {
-    const _game = _gameConfig;
-    _game.lifeCycle = {
-      onSetup: onSetup,
-      onStart: onStart,
-      onTick: onTick
-    }
-    this.gameConfig = _game;
-    this.alienConfig = _alienConfig;
-  };
-  get game() {
-    return {
+class GameConfiguration {
+  constructor(userConfiguration, userLifecycle) {
+    this._game = {
       version: 0.0,
       fps: 30,
       canvasses: {},
@@ -41,15 +30,27 @@ class DefaultConfig {
         }
       }
     };
+    this._configuration = () => {
+      return {
+        game: this._game
+      };
+    }
+    if (userConfiguration) {
+      this._configuration = new userConfiguration(userLifecycle); 
+    }
+  };
+  get config() {
+    return this._configuration;
   }
 }
 
 class Engine {
-  constructor(customConfig, customLifecycle) {
+  constructor(userConfig, userLifecycle) {
     this.id = 'ENGINE';
     this.eventSystem = new Reactor();
     this.audioSystem = new Audio();
-    this.config = (customConfig && new customConfig(customLifecycle)) || new DefaultConfig;
+    this.configuration = new GameConfiguration(userConfig, userLifecycle);
+    this.config = this.configuration.config;
     this.images = new ImageService();
 		this.eventSystem.registerEvent(this.id);
 		this.eventSystem.addEventListener(this.id, this.config.game.eventListener.bind(this, this));
