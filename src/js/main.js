@@ -3,7 +3,8 @@
 import Engine from './engine/engine';
 import { GameBoard } from '../custom/model/gameBoard';
 import { CustomConfig } from '../custom/config';
-import { 
+import {
+  ScoreDigit, 
   PlayerCapsule, 
   PlayerBase 
 } from '../custom/model/players';
@@ -42,6 +43,17 @@ const onSetup = (gameEngine) => {
       });
     }
     gameEngine.gameBoard.board.push(row);  
+  }
+
+  for (let col=0; col < columns; col += 1) {
+    gameEngine.gameBoard.board[10][col].gameObject = new ScoreDigit(
+      gameEngine.config.scoreDigit,
+      {
+        x: gameEngine.gameBoard.board[10][col].x, 
+        y: gameEngine.gameBoard.board[10][col].y
+      },
+      gameEngine  
+    )
   }
 
   // adjust the geometry of the player graphic to fit the gameBoard's dimensions

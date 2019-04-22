@@ -19,7 +19,25 @@ const playerCapsuleEventListener = (thisObj, evt) => {
     }  
   }
 };
- 
+
+class ScoreDigit extends CellBasedGameObject {
+  constructor(conf, position, engine) {
+    super(conf, position, engine);
+    this._val = 0;
+  }
+  get value() {
+    return this._val;
+  }
+  set value(v) {
+    this._val = v;
+  }
+}
+
+ScoreDigit.prototype.selectSprite = function() {
+	this.sprite = this.sprites[0];  
+  this.sprite.frame = this._val;
+}
+
 class Player extends CellBasedGameObject {
   constructor(conf, position, engine) {
     super(conf, position, engine);
@@ -99,4 +117,8 @@ PlayerBase.prototype.selectSprite = function(cell) {
 	this.sprite.frame = 0;
 }
 
-export { PlayerCapsule, PlayerBase };
+export { 
+  ScoreDigit,
+  PlayerCapsule, 
+  PlayerBase 
+};

@@ -52,6 +52,27 @@ const _phases = () => {
   }
 };
 
+const _scoreDigitConfig = () => {
+  return {
+    type: 'scoreDigit',
+    width: 55,
+    height: 50,
+    sprites: {
+      digits: {
+        sheet: {
+          path: 'scoresheet.png',
+          frameWidth: 62, 
+          frameHeight: 85,
+          rows: 1,
+          columns: 10
+        },	
+        isDefault: true
+      }
+    },
+    update: () => {}   
+  }
+};
+
 const _playerCapsuleConfig = () => {
   return {
     type: 'playerCapsule',
@@ -278,11 +299,16 @@ const _gameConfig = () => {
       // onStart: onStart,
       // onTick: onTick
     },
+    playerPoints: 0,
     eventListener: (engine, evt) => {
       if (evt && evt.action) {
         switch (evt.action) {
           case 'ADDPLAYERPOINTS': 
-            engine.playerPoints = engine.playerPoints ? engine.playerPoints += evt.value : evt.value ;
+            engine.config.game.playerPoints = engine.config.game.playerPoints ? engine.config.game.playerPoints += evt.value : evt.value ;
+            const score = engine.config.game.playerPoints.toString().padStart(5, '0');
+            for (let c = 0; c < engine.gameBoard.columns; c += 1) {
+              engine.gameBoard.board[10][c].gameObject.value = Number(score.substr(c, 1));
+            }
             break;
 
           case 'PLAYERHIT':
@@ -380,6 +406,9 @@ class CustomConfig {
       onStart: customLifecycle.onStart,
       onTick: customLifecycle.onTick
     };
+  };
+  get scoreDigit() {
+    return _scoreDigitConfig();
   };
   get game() {
     return this._game;
