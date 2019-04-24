@@ -59,7 +59,7 @@ const playerFlashState = {
     // invert drawable state
     player.canDraw = !player.canDraw;
   }
-}
+};
 
 const playerDieState = {
   name: stateNames.playerDie,
@@ -69,7 +69,11 @@ const playerDieState = {
   execute: (player) => {
     // TODO:
     // re-spawn (if there are sufficient lives remaining)
-    player.engine.eventSystem.dispatchEvent(player.engine.id, {action: 'PLAYERRESPAWN'});    
+    if (player.engine.config.game.playerLives > 0) {
+      player.engine.eventSystem.dispatchEvent(player.engine.id, {action: 'PLAYERRESPAWN'});    
+    } else {
+      player.engine.eventSystem.dispatchEvent(player.engine.id, {action: 'GAMEOVER'});    
+    }
   }
 };
 
@@ -177,7 +181,7 @@ const playerCapsuleFSMStates = () => {
     hit: capsuleHitState,
     flash: playerFlashState  
   };
-}
+};
 
 const onPlayerUpdate = (playerObj) => {
   if (playerObj.fsm) {

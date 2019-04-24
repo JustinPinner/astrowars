@@ -4,10 +4,12 @@ import Engine from './engine/engine';
 import { GameBoard } from '../custom/model/gameBoard';
 import { CustomConfig } from '../custom/config';
 import {
-  ScoreDigit, 
   PlayerCapsule, 
   PlayerBase 
 } from '../custom/model/players';
+import {
+  ScoreDigit
+} from '../custom/model/score';
 import { Alien } from '../custom/model/aliens';
 import '../css/game.css';
 
@@ -45,6 +47,7 @@ const onSetup = (gameEngine) => {
     gameEngine.gameBoard.board.push(row);  
   }
 
+  // initialise the score row
   for (let col=0; col < columns; col += 1) {
     gameEngine.gameBoard.board[10][col].gameObject = new ScoreDigit(
       gameEngine.config.scoreDigit,
@@ -56,8 +59,7 @@ const onSetup = (gameEngine) => {
     )
   }
 
-  // adjust the geometry of the player graphic to fit the gameBoard's dimensions
-  // and prepare the player's starting row and column
+  // prepare the player's starting row and column
   const playerCapsuleConfig = gameEngine.config.playerCapsule;
   const playerCapsuleRow = playerCapsuleConfig.startRow;
   const playerColumn = playerCapsuleConfig.startColumn;
@@ -89,6 +91,8 @@ const onSetup = (gameEngine) => {
   );
   
   // alien command ships occupy the row below the score (9 by default)
+  // in the first phase they don't do anything though, so don't include 
+  // them in the count of aliens spawned
   const commandShipRow = gameEngine.gameBoard.rows - 2;
   for (let c = 1; c < 4; c += 1) {
     const conf = gameEngine.config.commandShip;
@@ -123,6 +127,7 @@ const onSetup = (gameEngine) => {
     };
     gameEngine.gameBoard.board[row][col].gameObject = new Alien(conf, spawnPos, gameEngine);
     gameEngine.spawnedAliens = gameEngine.spawnedAliens ? gameEngine.spawnedAliens + 1 : 1;
+    gameEngine.config.game.spawnedAliens += 1; 
   }  
   
   // pre-load heavy images

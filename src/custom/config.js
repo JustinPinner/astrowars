@@ -15,6 +15,9 @@ import {
   playerBaseFSMStates, 
   playerBaseUpdate 
 } from './behaviour/playerActions';
+import {
+  scoreDigitFSMStates
+} from './model/score';
 import { 
   processor as keyProcessor 
 } from './keyProcessor';
@@ -69,7 +72,10 @@ const _scoreDigitConfig = () => {
         isDefault: true
       }
     },
-    update: () => {}   
+    fsmStates: scoreDigitFSMStates,
+    update: (digit) => {
+      digit.fsm && digit.fsm.execute();
+    }  
   }
 };
 
@@ -300,6 +306,8 @@ const _gameConfig = () => {
       // onTick: onTick
     },
     playerPoints: 0,
+    playerLives: 5,
+    spawnedAliens: 0,
     eventListener: (engine, evt) => {
       if (evt && evt.action) {
         switch (evt.action) {
@@ -325,10 +333,11 @@ const _gameConfig = () => {
                 gameObject.disposable = true;
               }
             }
+            engine.config.game.playerLives -= 1; 
             break;
 
           case 'ALIENDEATH':
-            if (engine.spawnedAliens && engine.spawnedAliens < engine.config.phases()[engine.phase].aliens) {
+            if (engine.config.game.spawnedAliens && engine.config.game.spawnedAliens < engine.config.phases()[engine.phase].aliens) {
               // spawn a new warship object
               const conf = engine.config.warship;
               let row = Math.floor((engine.gameBoard.rows - 4) + (Math.random() * 2));
@@ -345,7 +354,8 @@ const _gameConfig = () => {
                 x: engine.gameBoard.board[row][col].x,
                 y: engine.gameBoard.board[row][col].y
               };
-              engine.gameBoard.board[row][col].gameObject = new Alien(conf, spawnPos, engine);          
+              engine.gameBoard.board[row][col].gameObject = new Alien(conf, spawnPos, engine);
+              engine.config.game.spawnedAliens += 1;           
             }
             break;
 
@@ -384,6 +394,19 @@ const _gameConfig = () => {
             if (evt && evt.value) {
               engine.audioSystem.playEffect(evt.value.id);
             }
+            break;
+
+          case 'GAMEOVER':
+            for (const obj in engine.objects) {
+              const gameObject = engine.objects[obj];
+              if (gameObject.isPlayer || gameObject.isAlien || gameObject.isProjectile) {
+                gameObject.disposable = true;
+              }
+              if (gameObject.isScoreDigit) {
+                gameObject.fsm.transition(gameObject.fsm.states.flash);
+              }
+            }
+            break;          
         }
       }
       
