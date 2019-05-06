@@ -19,13 +19,17 @@ const stateNames = {
 };
 
 const horizontalMove = {
-  inc: 1,   // right
-  dec: -1   // left
+  right: 1,   // right
+  left: -1   // left
 };
 
 const verticalMove = {
-  inc: -1,  // up
-  dec: 1    // down
+  up: 1,  // up
+  down: -1    // down
+};
+
+const verticalMoveDown = {
+  down: -1    // down
 };
 
 const moveInstructions = {
@@ -41,69 +45,45 @@ const moveInstructions = {
   },
   diagonalDown: {
     horizontal: horizontalMove,
-    vertical: verticalMove
+    vertical: verticalMoveDown
   },
 };
 
-const nextAvailableCell = (alien, moveInstruction) => {
-  const maybeCell = alien.engine.gameBoard.cellFromCoordinates(alien.coordinates);
-  if (!maybeCell) {
-    // Wat?
-    return;
-  }
-  const currentCell = maybeCell[0][0];
-
+const nextAvailableCell = (alien, moveInstruction, canWrap) => {
   let relativeColumn = 0;
   let relativeRow = 0;
+
   if (moveInstruction.horizontal && moveInstruction.vertical) {
-    relativeColumn = Math.random() * 100 > 50 ? moveInstruction.horizontal.inc : moveInstruction.horizontal.dec; 
-    relativeRow = Math.random() * 100 > 50 ? moveInstruction.vertical.inc : moveInstruction.vertical.dec;
+    relativeColumn = Math.random() * 100 > 50 ? moveInstruction.horizontal.right : moveInstruction.horizontal.left;
+    relativeRow = moveInstruction.vertical.up ? ((Math.random() * 100 > 50) ? moveInstruction.vertical.up : moveInstruction.vertical.down) : moveInstruction.vertical.down;
   } else if (moveInstruction.horizontal) {
-    relativeColumn = Math.random() * 100 > 50 ? moveInstruction.horizontal.inc : moveInstruction.horizontal.dec; 
+    relativeColumn = Math.random() * 100 > 50 ? moveInstruction.horizontal.right : moveInstruction.horizontal.left; 
   } else {
-    relativeRow = Math.random() * 100 > 50 ? moveInstruction.vertical.inc : moveInstruction.vertical.dec;     
+    relativeRow = Math.random() * 100 > 50 ? moveInstruction.vertical.up : moveInstruction.vertical.down;     
   }
 
-  let maybeNeighbourCell = alien.engine.gameBoard.cellNeighbour(currentCell, relativeColumn, relativeRow);
+  if (alien.isCommandShip && alien.engine.config.phase !== 3) {
+    relativeRow = 0;
+  }
 
-  if (maybeNeighbourCell && maybeNeighbourCell.length > 0) {
-    const neighbourCell = maybeNeighbourCell[0][0];
-    if (!neighbourCell.gameObject.type) {
-      return neighbourCell;
-    } else {
-      // try other direction
-      relativeRow = (relativeRow > 0) ? relativeRow * -1 : 0;
-      relativeColumn = (relativeColumn > 0) ? relativeColumn * -1 : 0;      
-
-      maybeNeighbourCell = alien.engine.gameBoard.cellNeighbour(currentCell, relativeColumn, relativeRow);
-
-      if (maybeNeighbourCell && maybeNeighbourCell.length > 0) {
-        const neighbourCell = maybeNeighbourCell[0][0];
-        if (!neighbourCell.gameObject.type) {
-          // move here
-          return neighbourCell;
-        } else {
-          return null;
-        }        
-      }
-    }
-  } else {
-    // try other direction
-    relativeRow = (relativeRow > 0) ? relativeRow * -1 : 0;
-    relativeColumn = (relativeColumn > 0) ? relativeColumn * -1 : 0;      
+  if (relativeColumn !== 0 && !alien.canMoveHorizontally(relativeColumn, canWrap && canWrap.horizontal)) {
+    relativeColumn *= -1;
+  }
   
-    maybeNeighbourCell = alien.engine.gameBoard.cellNeighbour(currentCell, relativeColumn, relativeRow);
-  
-    if (maybeNeighbourCell && maybeNeighbourCell.length > 0) {
-      const neighbourCell = maybeNeighbourCell[0][0];
-      if (!neighbourCell.gameObject.type) {
-        // move here
-        return neighbourCell;
-      } else {
-        return null;
-      }        
+  if (relativeRow !== 0 && !alien.canMoveVertically(relativeRow, canWrap && canWrap.vertical)) {
+    relativeRow *= -1;
+  }
+
+  let nextCell = alien.engine.gameBoard.cellNeighbour(alien.currentCell, relativeColumn, relativeRow, canWrap);
+
+  if (nextCell) {
+    // aliens can currently only move into empty cells, or the player's cell
+    if (!nextCell.gameObject.type || (nextCell.gameObject.type && nextCell.gameObject.isPlayer)) {
+      return nextCell;
     }
   }
+
+  return null;
 };
 
 const dyingState = {
@@ -139,21 +119,43 @@ const zigZagDiveState = {
   name: 'zigZagDiveState', 
   nextStates: [stateNames.zigZagClimb, stateNames.landed, stateNames.shot],
   detectCollisions: true,
-  execute: (alien) => { 
-    if (alien.gameBoardRow == 1) {
-      // TODO: if player cell == alien cell
-      alien.fsm.transition(landedState);
-      // else wrap around to row 3
-      return;
+  minimumExecutionInterval: 500,
+  execute: (alien) => {     
+    // enable vertical screen wrap
+    const canWrap = {
+      horizontal: false,
+      vertical: true
     }
-    if (Math.random() * 100 > 50) {
-      alien.fsm.transition(zigZagClimbState);
-      return;
+
+    // drop bomb maybe (only between rows 9 and 5)
+    const bombLimit = {
+      upper: alien.engine.gameBoard.rows - 2,
+      lower: 5
+    };
+
+    switch (alien.currentCell.row) {
+      case (1 || 0): 
+        // check player collision
+        const player = alien.engine.getObjectByType('playerCapsule');
+        if (player.currentCell.column == alien.currentCell.column) {
+          alien.fsm.transition(landedState);
+        }
+        break;
     }
-    const freeCell = nextAvailableCell(alien, moveInstructions.diagonal);
-    if (freeCell) {
-      alien.moveToCell(freeCell);
+
+    const nextCell = nextAvailableCell(alien, moveInstructions.diagonalDown, canWrap);
+
+    if (nextCell) {
+      alien.moveToCell(nextCell);
     }
+
+    if (alien.currentCell.row < bombLimit.upper && alien.currentCell.row > bombLimit.lower) {
+      // drop bomb maybe
+      if (Math.random() * 100 > 50) {
+        alien.shoot();
+      }
+    }
+    
     return;
   }
 };
@@ -203,7 +205,7 @@ const shotState = {
   detectCollisions: false,
   execute: (alien) => {
     const engine = alien.engine;
-    if (!alien.isCommandShip || (alien.isCommandShip && engine.phase == 3)) { 
+    if (!alien.isCommandShip || (alien.isCommandShip && engine.config.game.phase == 3)) { 
       engine.eventSystem.dispatchEvent(engine.id, {action: 'PLAYSOUND', value: (alien.conf.soundEffects ? alien.conf.soundEffects['die'] : engine.defaultSoundEffects['die'])});
       engine.eventSystem.dispatchEvent(engine.id, {action: 'ADDPLAYERPOINTS', value: alien.pointsValue});
       engine.eventSystem.dispatchEvent(engine.id, {action: 'ALIENDEATH', value: alien.type});

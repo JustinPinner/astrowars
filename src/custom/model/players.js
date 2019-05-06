@@ -29,6 +29,39 @@ class Player extends CellBasedGameObject {
   }
 }
 
+Player.prototype.canMoveVertically = function (dir) {
+  switch (dir) {
+    case 1:  // up
+      if (this.isPlayerCapsule && this.engine.config.phase == 3 && this.state == 'launch') {
+        return true;
+      }      
+      break
+    case -1:  // down
+      if (this.isPlayerCapsule && this.engine.phase == 3 && this.state == 'landing') {
+        return true;
+      }      
+      break;
+  }
+  return false;
+};
+
+Player.prototype.canMoveHorizontally = function (dir) {
+  if (this.isPlayerBase && this.engine.config.phase == 3 && this.state == 'scroll') {
+    switch (dir) {
+      case -1:  // left
+        return false;
+      case 1:  // right
+        return true;
+    }  
+  }
+  switch (dir) {
+    case -1:  // left
+      return this.currentCell.column > 0;
+    case 1:  // right
+      return this.currentCell.column < this.engine.gameBoard.columns - 1;
+  }  
+};
+
 class PlayerCapsule extends Player {
   constructor(conf, position, engine) {
 		super(conf, position, engine);

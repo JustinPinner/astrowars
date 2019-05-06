@@ -51,7 +51,9 @@ Alien.prototype.eventListener = function (thisObj, evt) {
 Alien.prototype.selectSprite = function(cell) {
   // find a sprite
   const alienType = this.type;
-  const maybeSprite = this.sprites.filter(function(sprite) { return sprite.type == alienType; });
+//  const maybeSprite = this.sprites.filter(function(sprite) { return sprite.type == alienType; });
+  const maybeSprite = this.sprites.filter(function(sprite) { return sprite.conf.sheet.fromRow <= cell.row && sprite.conf.sheet.toRow >= cell.row; });
+
   if (maybeSprite && maybeSprite.length > 0) {
     this.sprite = maybeSprite[0];
   }
@@ -63,15 +65,20 @@ Alien.prototype.selectSprite = function(cell) {
         this.sprite.frame = 0;
         break;
       }
-      case this.engine.config.warship.type : {
-        const frame = (cell.row % 2 == 0) ? (cell.column % 2 == 0 ? 0 : 1) : ( cell.column % 2 == 0 ? 1 : 0); 
-        this.sprite.frame = frame;
+      default:
+        if (cell.row == 7 || cell.row == 8) {
+          // draw as a hovering warship
+          const frame = (cell.row % 2 == 0) ? (cell.column % 2 == 0 ? 0 : 1) : ( cell.column % 2 == 0 ? 1 : 0); 
+          this.sprite.frame = frame;
+        } else if (cell.row < 7 && cell.row > 1) {
+          // draw as a diving fighter
+          this.sprite.frame = cell.column;
+        } else {
+          // draw as a landed fighter
+          const frame = cell.column % 2 == 0 ? 0 : 1; 
+          this.sprite.frame = frame;
+        }
         break;
-      }
-      case this.engine.config.fighter.type: {
-        this.sprite.frame = cell.column;
-        break;
-      }
     }
   }
 }
@@ -83,7 +90,7 @@ Alien.prototype.shoot = function() {
     const bomb = new AlienBomb(this.engine);
     const launchPosition = {
 			x: this.coordinates.x + (this.width / 2) - (bomb.width / 2), 
-			y: this.coordinates.y
+			y: this.coordinates.y + (this.height / 2)
     };
     bomb.coordinates = launchPosition;
     this.engine.registerObject(bomb);

@@ -2,6 +2,10 @@ import { Keys } from '../js/ui/keys';
 
 const processor = (pressedKey, isPressed, host) => {
   switch (pressedKey) {
+    case Keys.SPACE:
+      if (host.gameEngine && host.gameEngine.config.game.phase == 0) {
+        host.gameEngine.eventSystem.dispatchEvent(host.gameEngine.id, {action: "STARTGAME"});
+      }
     case Keys.ARROWUP:
     case Keys.W:
       host.pressed.up = isPressed;

@@ -1,6 +1,6 @@
 import partition from '../lib/partition';
 
-export const Keys = {
+const Keys = {
   Q: 'KEYQ',
   W: 'KEYW',
   E: 'KEYE',
@@ -43,7 +43,8 @@ export const Keys = {
 }
 
 class KeyHandler {
-  constructor(keyProcessor) {
+  constructor(keyProcessor, gameEngine) {
+    this._engine = gameEngine;
     this._enabled = false;
     this._processKey = keyProcessor;
     this._ignored = [];
@@ -52,6 +53,9 @@ class KeyHandler {
   }
   get enabled() {
     return this._enabled;
+  }
+  get gameEngine() {
+    return this._engine;
   }
   set enabled(val) {
     this._enabled = val;
@@ -128,9 +132,25 @@ KeyHandler.prototype.handleKeyUp = function(e) {
   e.preventDefault();
   const key = e.code.toUpperCase();
   this._processKey(key, false, this);
-  // if (this.ignored(key)) {
-  //   this.listen(key);
-  // }
 }
 
-export default KeyHandler;
+const keyProcessor = (pressedKey, isPressed, keyHandler) => {
+  switch (pressedKey) {
+    case Keys.SPACE:
+      if (keyHandler.gameEngine && keyHandler.gameEngine.eventSystem) {
+        keyHandler.gameEngine.eventSystem.dispatchEvent(keyHandler.gameEngine.id, {action: "SPACEPRESSED"});
+      }
+      break;
+    case Keys.ENTER:
+      break;
+    case Keys.ESCAPE:
+      debugger;
+      break;  
+  }
+};
+
+export {
+  KeyHandler,
+  Keys,
+  keyProcessor
+};

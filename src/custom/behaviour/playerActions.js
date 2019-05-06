@@ -197,7 +197,12 @@ const playerBaseUpdate = (playerBaseObject) => {
   }
 };
 
-const canMove = () => {
+const direction = {
+  left: -1,
+  right: 1
+};
+
+const inputTimeoutElapsed = () => {
   const now = Date.now();
   const lastTime = (timing.moveToColumn && timing.moveToColumn.last) ? timing.moveToColumn.last : now;
   const duration = now - lastTime;
@@ -223,10 +228,10 @@ const processPlayerInputs = (playerObj) => {
 		if (buttons.start) {
 			debugger;
 		}
-		if (sticks.left.left && canMove()) {
+		if (sticks.left.left && inputTimeoutElapsed() && playerObj.canMoveHorizontally(direction.left)) {
       playerObj.moveLeft();
     }
-		if (sticks.left.right && canMove()) {
+		if (sticks.left.right && inputTimeoutElapsed() && playerObj.canMoveHorizontally(direction.right)) {
       playerObj.moveRight();
 		}
 		if (buttons.a) {
@@ -238,9 +243,9 @@ const processPlayerInputs = (playerObj) => {
 		}
 	}
 	
-  if (playerObj.engine.keyHandler.pressed.left && canMove()) {
+  if (playerObj.engine.keyHandler.pressed.left && inputTimeoutElapsed() && playerObj.canMoveHorizontally(direction.left)) {
     playerObj.moveLeft();
-  } else if (playerObj.engine.keyHandler.pressed.right && canMove()) {
+  } else if (playerObj.engine.keyHandler.pressed.right && inputTimeoutElapsed() && playerObj.canMoveHorizontally(direction.right)) {
     playerObj.moveRight();
   }
   if (playerObj.engine.keyHandler.pressed.enter) {

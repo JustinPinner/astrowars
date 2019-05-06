@@ -12,7 +12,7 @@ const processMissileUpdate = (missileObj) => {
   const currentCell = missileObj.engine.gameBoard.cellFromCoordinates(missileObj.coordinates);
   if (currentCell.length > 0) {
     const objectInCell = currentCell[0][0].gameObject;
-    if (objectInCell && objectInCell.type) {   // e.g. not just an empty object ({})
+    if (objectInCell && objectInCell.type && objectInCell.detectCollisions) {   // e.g. not just an empty/passive object
       missileObj.engine.eventSystem.dispatchEvent(objectInCell.id, {target: 'FSM', action: 'TRANSITION', state: _alienFSMStates.shot});
       missileObj.disposable = true;
     }  

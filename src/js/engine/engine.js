@@ -3,7 +3,10 @@ import Reactor from '../lib/events';
 import { Audio } from '../lib/audio';
 import Canvas2D from '../environment/canvas';
 import { TouchInterface, TouchHandler } from '../ui/touch';
-import KeyHandler from '../ui/keys';
+import { 
+  KeyHandler,
+  keyProcessor
+ } from '../ui/keys';
 import GamepadHandler from '../ui/gamepad';
 import partition from '../lib/partition';
 import GameObject from '../model/gameObject';
@@ -19,10 +22,11 @@ class GameConfiguration {
       enableTouchUI: 'auto',
       enableKeyboardUI: false,
       enableGamepadUI: false,
+      keyProcessor: keyProcessor,
       lifeCycle: {
-        setup: () => { return true; },
-        start: () => { return true; },
-        tick: () => { return true; }
+        onSetup: () => { return true; },  // --|\   any or all of these can be
+        onStart: () => { return true; },  //   |  > implemented via the userLifecycle
+        onTick: () => { return true; }    // --|/   parameter if desired
       },
       eventListener: (thisObj, evt) => {
         if (evt.callback) {
@@ -63,7 +67,7 @@ class Engine {
     this.hasTouchSupport = (window.navigator && window.navigator.maxTouchPoints > 0);
     this.gameObjects = [];
     this.canvasses = [];
-    this.keyHandler = this.config.game.enableKeyboardUI ? new KeyHandler(this.config.game.keyProcessor) : undefined;
+    this.keyHandler = null;
     this.gamepadHandler = this.config.game.enableGamepadUI ? new GamepadHandler() : undefined;
     this.touchHandler = (this.config.game.enableTouchUI === true || this.config.game.enableTouchUI === 'auto' && this.hasTouchSupport) ? new TouchHandler(this.config.game.touchUI) : undefined;
     this.timing = {};
@@ -211,6 +215,8 @@ Engine.prototype.setup = function() {
   if (this.setupDone) return; 
 
   this.timerStart('setup');
+
+  this.keyHandler = this.config.game.enableKeyboardUI ? new KeyHandler(this.config.game.keyProcessor, this) : undefined;
 
   this.onSetup.bind(this, this);
   this.onStart.bind(this, this);

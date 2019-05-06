@@ -1,5 +1,11 @@
 
 import {
+  showScore,
+  gameStart,
+  spawnWarships,
+  nextPhase
+} from './behaviour/gameActions';
+import {
   PlayerCapsule,
   PlayerBase
 } from './model/players';
@@ -36,22 +42,74 @@ const alienTypes = {
   fighter: 'fighter'
 };
 
-const _phases = () => {
-  return {
-    1: {
-      name: 'firstWave',
-      commandShips: 0,
-      aliens: 30
-    },
-    2: {
-      name: 'commandShips',
-      commandShips: 3,
-      aliens: 0
-    },
-    3: {
-      name: 'dockingBonus',
-      maxBonus: 1000
-    }
+const _phases = (phase) => {
+  switch (phase) {
+    case 0: 
+      return {
+        name: 'demo',
+        alienTotal: (alienType) => {
+          return (alienType == 'warship') ? 5 : 3;
+        },
+        alienConcurrent: (alienType) => {
+          return (alienType == 'warship') ? 5 : 3;
+        },
+        alienState: (alienType) => {
+          const states = alienFSMStates();
+          return (alienType == 'warship') ? states.strafe : states.idle;
+        }
+      };
+    case 1:
+      return {
+        name: 'assault',
+        alienTotal: (alienType) => {
+          return (alienType == 'warship') ? 30 : 3;
+        },
+        alienConcurrent: (alienType) => {
+          return (alienType == 'warship') ? 5 : 3;
+        },
+        alienState: (alienType) => {
+          const states = alienFSMStates();
+          return (alienType == 'warship') ? states.hover : states.idle;
+        }
+      };
+    case 2:
+      return {
+        name: 'dive',
+        alienTotal: (alienType) => {
+          return (alienType == 'warship') ? 15 : 0;
+        },
+        alienConcurrent: (alienType) => {
+          return (alienType == 'warship') ? 1 : 0;
+        },
+        alienState: (alienType) => {
+          const states = alienFSMStates();
+          return (alienType == 'warship') ? states.zigZagDive : states.idle;
+        }
+      };
+    case 3:
+      return {
+        name: 'command',
+        alienTotal: (alienType) => {
+          return (alienType == 'commandShip') ? 3 : 0;
+        },
+        alienConcurrent: (alienType) => {
+          return (alienType == 'commandShip') ? 3 : 0;
+        },
+        alienState: (alienType) => {
+          const states = alienFSMStates();
+          return (alienType == 'commandShip') ? states.strafe : states.idle;
+        }
+      };
+    case 4: 
+      return {
+        name: 'bonus',
+        alienTotal: () => {
+          return 0;
+        },
+        alienConcurrent: () => {
+          return 0;
+        }
+      };
   }
 };
 
@@ -211,6 +269,17 @@ const _alienConfig = () => {
           fromRow: 2,
           toRow: 6 
         }  
+      },
+      landedFighter: {
+        sheet: {
+          path: 'alien-landed-spritesheet.png',
+          frameWidth: 58, 
+          frameHeight: 50,
+          rows: 1,
+          columns: 2,
+          fromRow: 1,
+          toRow: 1 
+        }          
       }
     },
     soundEffects: {
@@ -305,18 +374,24 @@ const _gameConfig = () => {
       // onStart: onStart,
       // onTick: onTick
     },
-    playerPoints: 0,
+    gameBoardRows: 11,
+    gameBoardColumns: 5,
+    phase: 0,
+    level: 1,
+    playerPoints: 20,
     playerLives: 5,
-    spawnedAliens: 0,
+    spawnedCommandShips: 0,
+    spawnedWarships: 0,
     eventListener: (engine, evt) => {
       if (evt && evt.action) {
         switch (evt.action) {
+          case 'STARTGAME':
+            gameStart(engine);
+            break;
+
           case 'ADDPLAYERPOINTS': 
             engine.config.game.playerPoints = engine.config.game.playerPoints ? engine.config.game.playerPoints += evt.value : evt.value ;
-            const score = engine.config.game.playerPoints.toString().padStart(5, '0');
-            for (let c = 0; c < engine.gameBoard.columns; c += 1) {
-              engine.gameBoard.board[10][c].gameObject.value = Number(score.substr(c, 1));
-            }
+            showScore(engine);
             break;
 
           case 'PLAYERHIT':
@@ -337,25 +412,20 @@ const _gameConfig = () => {
             break;
 
           case 'ALIENDEATH':
-            if (engine.config.game.spawnedAliens && engine.config.game.spawnedAliens < engine.config.phases()[engine.phase].aliens) {
-              // spawn a new warship object
-              const conf = engine.config.warship;
-              let row = Math.floor((engine.gameBoard.rows - 4) + (Math.random() * 2));
-              let col = Math.floor(Math.random() * engine.gameBoard.columns);
-              // test if this [row][col] position is already occupied by a game object
-              while(engine.gameBoard.board[row][col].gameObject.id) {
-                row = Math.floor((engine.gameBoard.rows - 5) + (Math.random() * 2));
-                col = Math.floor(Math.random() * engine.gameBoard.columns);
-              }
-              conf.width = engine.gameBoard.board[row][col].width;
-              conf.height = engine.gameBoard.board[row][col].height;
-              conf.fsmStates.default = conf.fsmStates['hover'];
-              const spawnPos = {
-                x: engine.gameBoard.board[row][col].x,
-                y: engine.gameBoard.board[row][col].y
-              };
-              engine.gameBoard.board[row][col].gameObject = new Alien(conf, spawnPos, engine);
-              engine.config.game.spawnedAliens += 1;           
+            const phase = engine.config.phases(engine.config.game.phase);
+            switch (evt.value) {
+              case 'warship':
+                if (engine.config.game.spawnedWarships && engine.config.game.spawnedWarships < phase.alienTotal('warship')) {
+                  // spawn a new warship object
+                  spawnWarships(engine, 1);
+                }
+                break;
+              case 'commandShip':
+                if (engine.config.game.spawnedCommandShips && engine.config.game.spawnedCommandShips < phase.alienTotal('commandShip')) {
+                  // spawn a new warship object
+                  spawnCommandShips(engine, 1);
+                }
+                break;
             }
             break;
 
@@ -393,6 +463,21 @@ const _gameConfig = () => {
           case 'PLAYSOUND':
             if (evt && evt.value) {
               engine.audioSystem.playEffect(evt.value.id);
+            }
+            break;
+
+          case 'CHECKPHASECOMPLETE':
+            switch (engine.config.game.phase) {
+              case (1 || 2):
+                if (!engine.getObjectsByType('warship')) {
+                  nextPhase(engine);
+                }  
+                break;
+              case 3:
+                if (!engine.getObjectsByType('commandShip')) {
+                  nextPhase(engine);
+                }  
+                break;
             }
             break;
 

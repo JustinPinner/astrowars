@@ -12,10 +12,13 @@ class CellBasedGameObject extends GameObject {
   }
   get currentCell() {
     return this.engine.gameBoard.cellFromCoordinates(this.coordinates)[0][0];
+  }
+  get detectCollisions() {
+    return this.fsm && this.fsm.currentState && this.fsm.currentState.detectCollisions;
   }	
 }
 
-// some behaviours that are common to all our custom objects
+// some behaviours that are common to all our custom objects (may be overridden by descendant classes)
 
 CellBasedGameObject.prototype.selectSprite = function(cell) {
   // draw sprite image based on default or row/col position
@@ -42,17 +45,37 @@ CellBasedGameObject.prototype.moveToCell = function (cell) {
   currentCell.gameObject = {};
 }
 
+CellBasedGameObject.prototype.canMoveVertically = function (dir, canWrap) {
+  switch (dir) {
+    case 1:  // up
+      return (this.currentCell.row < this.engine.gameBoard.rows - 1) || canWrap;
+    case -1:  // down
+      return (this.currentCell.row > 1) || canWrap;
+  }
+};
+
+CellBasedGameObject.prototype.canMoveHorizontally = function (dir, canWrap) {
+  switch (dir) {
+    case -1:  // left
+      return (this.currentCell.column > 0) || canWrap;
+    case 1:  // right
+      return (this.currentCell.column < this.engine.gameBoard.columns - 1) || canWrap;
+  }
+};
+
 CellBasedGameObject.prototype.moveLeft = function() {
-  let maybeNeighbourCell = this.engine.gameBoard.cellNeighbour(this.currentCell, -1, 0);
-  if (maybeNeighbourCell && maybeNeighbourCell.length > 0) {
-		this.moveToCell(maybeNeighbourCell[0][0]);
+  // if (this.isPlayer && this.currentCell.column == 0) debugger;
+  const maybeNeighbourCell = this.engine.gameBoard.cellNeighbour(this.currentCell, -1, 0);
+  if (maybeNeighbourCell) {
+		this.moveToCell(maybeNeighbourCell);
 	}
 }
 
 CellBasedGameObject.prototype.moveRight = function() {
+  // if (this.isPlayer && this.currentCell.column == 4) debugger;
   let maybeNeighbourCell = this.engine.gameBoard.cellNeighbour(this.currentCell, 1, 0);
-  if (maybeNeighbourCell && maybeNeighbourCell.length > 0) {
-		this.moveToCell(maybeNeighbourCell[0][0]);
+  if (maybeNeighbourCell) {
+		this.moveToCell(maybeNeighbourCell);
 	}
 }
 

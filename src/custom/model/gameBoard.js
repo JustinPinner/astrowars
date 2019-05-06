@@ -41,12 +41,24 @@ GameBoard.prototype.cellFromCoordinates = function(point2d) {
   return cells;
 }
 
-GameBoard.prototype.cellNeighbour = function(cell, relativeColumn = 0, relativeRow = 0) {
-  const testCoords = {
-    x: cell.x + (relativeColumn * cell.width),
-    y: cell.y + (relativeRow * cell.height)
-  };
-  return this.cellFromCoordinates(testCoords);
+GameBoard.prototype.cellNeighbour = function(cell, relativeColumn, relativeRow, canWrap) {
+  let nextColumn = cell.column + (relativeColumn || 0);
+  let nextRow = cell.row + (relativeRow || 0);
+
+  if (nextColumn > this.columns - 1) {
+    nextColumn = (canWrap && canWrap.horizontal) ? 0 : cell.column;
+  } else if (nextColumn < 0) {
+    nextColumn = (canWrap && canWrap.horizontal) ? this.columns - 1 : cell.column;
+  }
+
+  if (nextRow > this.rows - 1) {
+    nextRow = (canWrap && canWrap.vertical) ? 1 : cell.row; // 1 because we never wrap to the player base row (0)
+  } else if (nextRow < 1) {
+    nextRow = (canWrap && canWrap.vertical) ? this.rows - 2 : cell.row; // -2 because we don't wrap to the score or commandship rows
+  }
+
+  return this.board[nextRow][nextColumn];
+
 }
 
 export { GameBoard };
