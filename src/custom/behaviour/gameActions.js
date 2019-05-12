@@ -1,13 +1,14 @@
 
 import { 
-  GameBoard 
+  GameBoard,
+  Cell 
 } from '../model/gameBoard';
 import {
   PlayerCapsule, 
   PlayerBase 
 } from '../model/players';
 import {
-  ScoreDigit
+  Digit
 } from '../model/score';
 import { 
   Alien 
@@ -27,17 +28,34 @@ const initGameBoard = (gameEngine) => {
     for (let c = 0; c < gameEngine.gameBoard.columns; c += 1) {
       const x = Math.floor(colWidth * c);
       const y = Math.floor(rowHeight * ((gameEngine.gameBoard.rows - 1) - r));
-      row.push({
-        row: r,
-        column: c,
-        x: x, 
-        y: y, 
-        width: colWidth, 
-        height: rowHeight, 
-        gameObject: {}
-      });
+      row.push(new Cell(r, c, x, y, colWidth, rowHeight));
     }
     gameEngine.gameBoard.board.push(row);  
+  }
+};
+
+const showLevel = (gameEngine) => {
+  if (!gameEngine.gameBoard) {
+    return;
+  }
+  const levelRow = 10;  // we're re-using the score location
+  const level = gameEngine.config.game.level.toString();
+  for (let d=0; d < level.length; d+=1) {
+    const pad = gameEngine.gameBoard.columns - level.length - 1;
+    const col = pad + d;
+    const cell = gameEngine.gameBoard.board[levelRow][col];
+    if (cell.contents.length < 1) {
+      const digit = new Digit(
+        gameEngine.config.digit,
+        {
+          x: cell.x, 
+          y: cell.y
+        },
+        gameEngine  
+      );
+      digit.value = Number(level.substr(d, 1));
+      cell.addObject(digit);
+    }
   }
 };
 
@@ -50,17 +68,16 @@ const showScore = (gameEngine) => {
   for (let d=0; d < score.length; d+=1) {
     const pad = gameEngine.gameBoard.columns - score.length - 1;
     const col = pad + d;
-    if (!gameEngine.gameBoard.board[scoreRow][col].gameObject.id) {
-      gameEngine.gameBoard.board[scoreRow][col].gameObject = new ScoreDigit(
-        gameEngine.config.scoreDigit,
-        {
-          x: gameEngine.gameBoard.board[scoreRow][col].x, 
-          y: gameEngine.gameBoard.board[scoreRow][col].y
-        },
-        gameEngine  
-      );
-    }
-    gameEngine.gameBoard.board[scoreRow][col].gameObject.value = Number(score.substr(d, 1));
+    const cell = gameEngine.gameBoard.board[scoreRow][col];
+    const digit = (cell.contents[0] && cell.contents[0].isDigit) ? cell.contents[0] : cell.addObject(new Digit(
+      gameEngine.config.digit,
+      {
+        x: cell.x, 
+        y: cell.y
+      },
+      gameEngine  
+    ));
+    digit.value = Number(score.substr(d, 1));
   }
 }
 
@@ -91,26 +108,18 @@ const spawnWarships = (gameEngine, qty) => {
   const phase = gameEngine.config.game.phases(gameEngine.config.game.phase);
   const numShips = qty || phase.alienConcurrent('warship');
   for (let warship = 0; warship < numShips; warship += 1) {
-    let row = phase.name == 'dive' ? 9 : (gameEngine.gameBoard.rows - 5) + Math.ceil((Math.random() * 2));
-    let col = Math.floor(Math.random() * gameEngine.gameBoard.columns);
-
-    if (phase.name !== 'dive') {
-      // test if this [row][col] position is already occupied by a game object
-      while(gameEngine.gameBoard.board[row][col].gameObject.id) {
-        row = (gameEngine.gameBoard.rows - 5) + Math.ceil((Math.random() * 2));
-        col = Math.floor(Math.random() * gameEngine.gameBoard.columns);
-      }
-    }
-
+    const row = phase.name == 'dive' ? gameEngine.gameBoard.rows - 2 : (gameEngine.gameBoard.rows - 5) + Math.ceil((Math.random() * 2));
+    const col = Math.floor(Math.random() * gameEngine.gameBoard.columns);
+    const cell = gameEngine.gameBoard.board[row][col];
     const conf = gameEngine.config.warship;
-    conf.width = gameEngine.gameBoard.board[row][col].width;
-    conf.height = gameEngine.gameBoard.board[row][col].height;
+    conf.width = cell.width;
+    conf.height = cell.height;
     conf.fsmStates.default = phase.alienState('warship'); //conf.fsmStates['hover'];
     const spawnPos = {
-      x: gameEngine.gameBoard.board[row][col].x,
-      y: gameEngine.gameBoard.board[row][col].y
+      x: cell.x,
+      y: cell.y
     };
-    gameEngine.gameBoard.board[row][col].gameObject = new Alien(conf, spawnPos, gameEngine);
+    cell.addObject(new Alien(conf, spawnPos, gameEngine));
     gameEngine.config.game.spawnedWarships = gameEngine.config.game.spawnedWarships ? gameEngine.config.game.spawnedWarships += 1 : 1; 
   }  
 };
@@ -120,15 +129,16 @@ const spawnPlayerCapsule = (gameEngine) => {
   const playerCapsuleConfig = gameEngine.config.playerCapsule;
   const playerCapsuleRow = playerCapsuleConfig.startRow;
   const playerColumn = playerCapsuleConfig.startColumn;
-
-  gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].gameObject = new PlayerCapsule(
+  const cell = gameEngine.gameBoard.board[playerCapsuleRow][playerColumn];
+  const playerCapsule = new PlayerCapsule(
     playerCapsuleConfig,
     {
-      x: gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].x, 
-      y: gameEngine.gameBoard.board[playerCapsuleRow][playerColumn].y
+      x: cell.x, 
+      y: cell.y
     },
     gameEngine
-  )
+  );
+  cell.addObject(playerCapsule);
 };
 
 const spawnPlayerBase = (gameEngine) => {
@@ -139,16 +149,16 @@ const spawnPlayerBase = (gameEngine) => {
   const playerBaseConfig = gameEngine.config.playerBase;
   const playerBaseRow = playerBaseConfig.startRow;
   const playerBaseColumn = playerBaseConfig.startColumn;
- 
-  gameEngine.gameBoard.board[playerBaseRow][playerBaseColumn].gameObject = new PlayerBase(
+  const cell = gameEngine.gameBoard.board[playerBaseRow][playerBaseColumn];
+  const playerBase = new PlayerBase(
     playerBaseConfig,
     {
-      x: gameEngine.gameBoard.board[playerBaseRow][playerBaseColumn].x, 
-      y: gameEngine.gameBoard.board[playerBaseRow][playerBaseColumn].y
+      x: cell.x, 
+      y: cell.y
     },
     gameEngine
   );
-
+  cell.addObject(playerBase)
 };
 
 const reset = (gameEngine) => {
@@ -168,7 +178,7 @@ const reset = (gameEngine) => {
 const initDemoMode = (gameEngine) => {
   reset(gameEngine);
   gameEngine.config.game.phase = 0;
-  showScore(gameEngine);
+  showLevel(gameEngine);
   spawnCommandShips(gameEngine);  
   spawnWarships(gameEngine);
 };

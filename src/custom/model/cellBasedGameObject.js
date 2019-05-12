@@ -38,11 +38,10 @@ CellBasedGameObject.prototype.moveToCell = function (cell) {
       console.log(`Live CellBasedGameObject (${this.id}) without an address :(`);
       return;
   }
-  // this.selectSprite(cell);
-  cell.gameObject = this;
+  cell.addObject(this);
   this.coordinates.x = cell.x;
   this.coordinates.y = cell.y;
-  currentCell.gameObject = {};
+  currentCell.removeObject(this);
 }
 
 CellBasedGameObject.prototype.canMoveVertically = function (dir, canWrap) {
@@ -64,7 +63,6 @@ CellBasedGameObject.prototype.canMoveHorizontally = function (dir, canWrap) {
 };
 
 CellBasedGameObject.prototype.moveLeft = function() {
-  // if (this.isPlayer && this.currentCell.column == 0) debugger;
   const maybeNeighbourCell = this.engine.gameBoard.cellNeighbour(this.currentCell, -1, 0);
   if (maybeNeighbourCell) {
 		this.moveToCell(maybeNeighbourCell);
@@ -72,7 +70,6 @@ CellBasedGameObject.prototype.moveLeft = function() {
 }
 
 CellBasedGameObject.prototype.moveRight = function() {
-  // if (this.isPlayer && this.currentCell.column == 4) debugger;
   let maybeNeighbourCell = this.engine.gameBoard.cellNeighbour(this.currentCell, 1, 0);
   if (maybeNeighbourCell) {
 		this.moveToCell(maybeNeighbourCell);

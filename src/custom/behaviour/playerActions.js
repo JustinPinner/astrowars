@@ -48,8 +48,8 @@ const playerFlashState = {
   nextStates: [stateNames.playerDie],
   detectCollisions: false,
   processPlayerInputs: false,
-  minimumExecutionInterval: 500,
-  minimumStateDuration: 3000,
+  minimumExecutionInterval: 300,
+  minimumStateDuration: 2000,
   force: true,
   execute: (player) => {
     if ((player.fsm.currentState.minimumStateDuration || 0) <= player.fsm.lastExecutionTime - player.fsm.startTime) {
@@ -67,7 +67,6 @@ const playerDieState = {
   detectCollisions: false,
   processPlayerInputs: false,
   execute: (player) => {
-    // TODO:
     // re-spawn (if there are sufficient lives remaining)
     if (player.engine.config.game.playerLives > 0) {
       player.engine.eventSystem.dispatchEvent(player.engine.id, {action: 'PLAYERRESPAWN'});    
@@ -119,7 +118,7 @@ const capsuleHitState = {
     // TODO:
     const engine = playerCapsule.engine;
     engine.eventSystem.dispatchEvent(engine.id, {action: 'PLAYSOUND', value: (playerCapsule.conf.soundEffects ? playerCapsule.conf.soundEffects['die'] : engine.defaultSoundEffects['die'])});
-    engine.eventSystem.dispatchEvent(engine.id, {action: "PLAYERHIT"});
+    engine.eventSystem.dispatchEvent(engine.id, {action: "PLAYERBOMBED"});
     // transition to flash state
     playerCapsule.fsm.transition(playerCapsule.fsm.states.flash);
   }

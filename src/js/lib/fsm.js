@@ -66,8 +66,8 @@ FSM.prototype.setState = function(newState) {
   this.lastExecutionTime = undefined;
 }
 
-FSM.prototype.transition = function(newState) {
-  if (this.currentState && this.currentState.nextStates.includes(newState.name) || newState.force) {
+FSM.prototype.transition = function(newState, force) {
+  if (this.currentState && this.currentState.nextStates.includes(newState.name) || newState.force || force) {
     this.setState(newState);
     if (newState.executeOnTransition) {
       this.execute();

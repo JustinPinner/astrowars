@@ -22,7 +22,7 @@ import {
   playerBaseUpdate 
 } from './behaviour/playerActions';
 import {
-  scoreDigitFSMStates
+  digitFSMStates
 } from './model/score';
 import { 
   processor as keyProcessor 
@@ -48,10 +48,10 @@ const _phases = (phase) => {
       return {
         name: 'demo',
         alienTotal: (alienType) => {
-          return (alienType == 'warship') ? 5 : 3;
+          return (alienType == 'warship') ? 4 : 3;
         },
         alienConcurrent: (alienType) => {
-          return (alienType == 'warship') ? 5 : 3;
+          return (alienType == 'warship') ? 4 : 3;
         },
         alienState: (alienType) => {
           const states = alienFSMStates();
@@ -113,9 +113,9 @@ const _phases = (phase) => {
   }
 };
 
-const _scoreDigitConfig = () => {
+const _digitConfig = () => {
   return {
-    type: 'scoreDigit',
+    type: 'digit',
     width: 55,
     height: 50,
     sprites: {
@@ -130,7 +130,7 @@ const _scoreDigitConfig = () => {
         isDefault: true
       }
     },
-    fsmStates: scoreDigitFSMStates,
+    fsmStates: digitFSMStates,
     update: (digit) => {
       digit.fsm && digit.fsm.execute();
     }  
@@ -382,7 +382,7 @@ const _gameConfig = () => {
     playerLives: 5,
     spawnedCommandShips: 0,
     spawnedWarships: 0,
-    eventListener: (engine, evt) => {
+    eventListener: (engine, evt) => {      
       if (evt && evt.action) {
         switch (evt.action) {
           case 'STARTGAME':
@@ -394,12 +394,12 @@ const _gameConfig = () => {
             showScore(engine);
             break;
 
-          case 'PLAYERHIT':
+          case 'PLAYERBOMBED':
             for (const obj in engine.objects) {
               const gameObject = engine.objects[obj];
-              if (gameObject.isAlien && gameObject.fsm) {
+              if (gameObject.isAlien && gameObject.fsm) {                
                 gameObject.fsm.pushState();
-                gameObject.fsm.transition(gameObject.fsm.states.pause);
+                gameObject.fsm.transition(gameObject.fsm.states.pause);  
               }
               if (gameObject.isPlayer && gameObject.fsm) {
                 gameObject.fsm.transition(gameObject.fsm.states.flash);
@@ -409,6 +409,30 @@ const _gameConfig = () => {
               }
             }
             engine.config.game.playerLives -= 1; 
+            break;
+
+          case 'PLAYEROVERRUN':
+            if (!evt.source || !evt.target) {
+              console.log('Error in PLAYEROVERRUN: missing event source and/or target objects');
+              return;
+            }
+            const alien = evt.source;
+            const player = evt.target;
+            const playerBase = engine.getObjectByType('playerBase');
+
+            for (const obj in engine.objects) {
+              const gameObject = engine.objects[obj];
+              if (gameObject.isAlien && gameObject.fsm && gameObject.id !== alien.id) {                
+                gameObject.fsm.pushState();
+                gameObject.fsm.transition(gameObject.fsm.states.pause);  
+              }
+              if (gameObject.isProjectile) {
+                gameObject.disposable = true;
+              }
+            }            
+            alien.fsm.transition(alien.fsm.states.flash);
+            player.fsm.transition(player.fsm.states.flash);
+            playerBase && playerBase.fsm.transition(playerBase.fsm.states.flash);
             break;
 
           case 'ALIENDEATH':
@@ -437,10 +461,13 @@ const _gameConfig = () => {
                 const currentCell = gameObject.currentCell;
                 if (currentCell.row != gameObject.conf.startRow || currentCell.column != gameObject.conf.startColumn) {
                   // reset row/column
-                  engine.gameBoard.board[gameObject.currentCell.row][gameObject.currentCell.column].gameObject = {};
-                  engine.gameBoard.board[gameObject.conf.startRow][gameObject.conf.startColumn].gameObject = gameObject;
-                  gameObject.coordinates.x = engine.gameBoard.board[gameObject.conf.startRow][gameObject.conf.startColumn].x;
-                  gameObject.coordinates.y = engine.gameBoard.board[gameObject.conf.startRow][gameObject.conf.startColumn].y;
+                  currentCell.removeObject(gameObject);
+                  // engine.gameBoard.board[gameObject.currentCell.row][gameObject.currentCell.column].gameObject = {};
+                  const startCell = engine.gameBoard.board[gameObject.conf.startRow][gameObject.conf.startColumn];
+                  startCell.clearObjects();
+                  startCell.addObject(gameObject);
+                  gameObject.coordinates.x = startCell.x;
+                  gameObject.coordinates.y = startCell.y;
                 }
                 gameObject.canDraw = true;
                 engine.eventSystem.dispatchEvent(gameObject.id, {target: 'FSM', action: 'SET', state: gameObject.fsm.states.live});
@@ -487,7 +514,7 @@ const _gameConfig = () => {
               if (gameObject.isPlayer || gameObject.isAlien || gameObject.isProjectile) {
                 gameObject.disposable = true;
               }
-              if (gameObject.isScoreDigit) {
+              if (gameObject.isDigit) {
                 gameObject.fsm.transition(gameObject.fsm.states.flash);
               }
             }
@@ -515,8 +542,8 @@ class CustomConfig {
       onTick: customLifecycle.onTick
     };
   };
-  get scoreDigit() {
-    return _scoreDigitConfig();
+  get digit() {
+    return _digitConfig();
   };
   get game() {
     return this._game;

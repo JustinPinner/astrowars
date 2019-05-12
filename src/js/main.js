@@ -1,16 +1,7 @@
 // main game definition and loop
 
 import Engine from './engine/engine';
-import { GameBoard } from '../custom/model/gameBoard';
 import { CustomConfig } from '../custom/config';
-import {
-  PlayerCapsule, 
-  PlayerBase 
-} from '../custom/model/players';
-import {
-  ScoreDigit
-} from '../custom/model/score';
-import { Alien } from '../custom/model/aliens';
 import '../css/game.css';
 import { 
   initDemoMode 

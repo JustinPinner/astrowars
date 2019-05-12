@@ -121,6 +121,7 @@ KeyHandler.prototype.deQueue = function(key) {
 
 KeyHandler.prototype.handleKeyDown = function(e) {
   e.preventDefault();
+  e.cancelBubble = true;
   const key = e.code.toUpperCase();
   if (this.ignored(key)) {
     return;
@@ -130,6 +131,7 @@ KeyHandler.prototype.handleKeyDown = function(e) {
 
 KeyHandler.prototype.handleKeyUp = function(e) {
   e.preventDefault();
+  e.cancelBubble = true;
   const key = e.code.toUpperCase();
   this._processKey(key, false, this);
 }

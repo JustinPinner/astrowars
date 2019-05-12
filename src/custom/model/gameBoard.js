@@ -15,6 +15,82 @@
 // [00] |[0][1][2][3][4]| <-- Earthship Base (player)    --/ when the player has to re-dock the capsule
 //      -----------------
 
+class Cell {
+  constructor(row, column, x, y, width, height) {
+    this._row = row,
+    this._column = column,
+    this._x = x;
+    this._y = y;
+    this._width = width,
+    this._height = height
+    this._objs = [];
+  }
+  get row() {
+    return this._row;
+  }
+  get column() {
+    return this._column;
+  }
+  get x() {
+    return this._x;
+  }
+  get y() {
+    return this._y;
+  }
+  get width() {
+    return this._width;
+  }
+  get height() {
+    return this._height;
+  }
+  get contents() {
+    return this._objs;
+  }
+
+  set row(val) {
+    this._row = val;
+  }
+  set column(val) {
+    this._column = val;
+  }
+  set x(val) {
+    this._x = val;
+  }
+  set y(val) {
+    this._y = val;
+  }
+  set width(val) {
+    this._width = val;
+  }
+  set height(val) {
+    this._height = val;
+  }
+  set contents(objs) {
+    this._objs = objs;
+  }
+}
+
+Cell.prototype.clearObjects = function () {
+  this._objs.forEach(obj => {
+    obj.disposable = true;
+  });
+  this._objs = [];
+}
+
+Cell.prototype.getObject = function(id) {
+  const matched = this._objs.filter( function (obj) { return obj.id == id; });
+  return (matched && matched.length > 0) ? matched[0] : undefined;
+}
+
+Cell.prototype.addObject = function (obj) {
+  this._objs.push(obj);
+  return obj;
+}
+
+Cell.prototype.removeObject = function (obj) {
+  this._objs = this._objs.filter(function (o) { return o.id !== obj.id; });
+}
+
 class GameBoard {
   constructor(rows, columns) {
     this.rows = rows;
@@ -54,11 +130,14 @@ GameBoard.prototype.cellNeighbour = function(cell, relativeColumn, relativeRow, 
   if (nextRow > this.rows - 1) {
     nextRow = (canWrap && canWrap.vertical) ? 1 : cell.row; // 1 because we never wrap to the player base row (0)
   } else if (nextRow < 1) {
-    nextRow = (canWrap && canWrap.vertical) ? this.rows - 2 : cell.row; // -2 because we don't wrap to the score or commandship rows
+    nextRow = (canWrap && canWrap.vertical) ? this.rows - 3 : cell.row; // -3 because we don't wrap to the score or commandship rows & rows is one-based :-/
   }
 
   return this.board[nextRow][nextColumn];
 
 }
 
-export { GameBoard };
+export { 
+  GameBoard,
+  Cell
+};

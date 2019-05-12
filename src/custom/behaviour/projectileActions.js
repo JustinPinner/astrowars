@@ -10,12 +10,18 @@ const processMissileUpdate = (missileObj) => {
     missileObj.disposable = true;
   }
   const currentCell = missileObj.engine.gameBoard.cellFromCoordinates(missileObj.coordinates);
-  if (currentCell.length > 0) {
-    const objectInCell = currentCell[0][0].gameObject;
-    if (objectInCell && objectInCell.type && objectInCell.detectCollisions) {   // e.g. not just an empty/passive object
-      missileObj.engine.eventSystem.dispatchEvent(objectInCell.id, {target: 'FSM', action: 'TRANSITION', state: _alienFSMStates.shot});
-      missileObj.disposable = true;
-    }  
+  let hit;  // only hit one thing at a time
+  for (let c = 0; c < currentCell.length; c += 1) {
+    for (let o = 0; o < currentCell[c][0].contents.length; o += 1) {
+      const objectInCell = currentCell[c][0].contents[o];
+      if (objectInCell && objectInCell.type && objectInCell.detectCollisions) {   // e.g. not just an empty/passive object
+        missileObj.engine.eventSystem.dispatchEvent(objectInCell.id, {target: 'FSM', action: 'TRANSITION', state: _alienFSMStates.shot});
+        missileObj.disposable = true;
+        hit = true;
+      }
+      if (hit) break;  
+    }
+    if (hit) break;
   }
   return;
 };
@@ -33,12 +39,18 @@ const processBombUpdate = (bombObj) => {
     bombObj.disposable = true;
   }
   const currentCell = bombObj.engine.gameBoard.cellFromCoordinates(bombObj.coordinates);
-  if (currentCell.length > 0) {
-    const objectInCell = currentCell[0][0].gameObject;
-    if (objectInCell && objectInCell.type && objectInCell.isPlayer) {
-      bombObj.engine.eventSystem.dispatchEvent(objectInCell.id, {target: 'FSM', action: 'TRANSITION', state: _playerCapsuleFSMStates.hit});
-      bombObj.disposable = true;
+  let hit;  // only hit one thing at a time
+  for (let c = 0; c < currentCell.length; c += 1) {
+    for (let o = 0; o < currentCell[c][0].contents.length; o += 1) {
+      const objectInCell = currentCell[c][0].contents[o];
+      if (objectInCell && objectInCell.type && objectInCell.isPlayer) {
+        bombObj.engine.eventSystem.dispatchEvent(objectInCell.id, {target: 'FSM', action: 'TRANSITION', state: _playerCapsuleFSMStates.hit});
+        bombObj.disposable = true;
+        hit = true;
+      }
+      if (hit) break;
     }
+    if (hit) break;
   }
   return;
 };

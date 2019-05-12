@@ -76,14 +76,7 @@ const nextAvailableCell = (alien, moveInstruction, canWrap) => {
 
   let nextCell = alien.engine.gameBoard.cellNeighbour(alien.currentCell, relativeColumn, relativeRow, canWrap);
 
-  if (nextCell) {
-    // aliens can currently only move into empty cells, or the player's cell
-    if (!nextCell.gameObject.type || (nextCell.gameObject.type && nextCell.gameObject.isPlayer)) {
-      return nextCell;
-    }
-  }
-
-  return null;
+  return nextCell;
 };
 
 const dyingState = {
@@ -93,7 +86,8 @@ const dyingState = {
     alien.disposable = true;
     const gameBoardCell = alien.engine.gameBoard.cellFromCoordinates(alien.coordinates);
     if (gameBoardCell && gameBoardCell.length > 0) {
-      gameBoardCell[0][0].gameObject = {};
+      const cell = gameBoardCell[0][0];
+      cell.removeObject(alien);
     }
     return;
   }
@@ -103,7 +97,8 @@ const landedState = {
   name: 'landedState',
   nextStates: [stateNames.dying],
   execute: (alien) => {
-    // TODO
+    // STOP!!
+
   }
 };
 
@@ -125,7 +120,7 @@ const zigZagDiveState = {
     const canWrap = {
       horizontal: false,
       vertical: true
-    }
+    };
 
     // drop bomb maybe (only between rows 9 and 5)
     const bombLimit = {
@@ -137,8 +132,10 @@ const zigZagDiveState = {
       case (1 || 0): 
         // check player collision
         const player = alien.engine.getObjectByType('playerCapsule');
-        if (player.currentCell.column == alien.currentCell.column) {
+        if (player && player.currentCell.column == alien.currentCell.column) {
+          alien.engine.eventSystem.dispatchEvent(alien.engine.id, { action:'PLAYEROVERRUN', source: alien, target: player });
           alien.fsm.transition(landedState);
+          return;
         }
         break;
     }
@@ -229,6 +226,13 @@ const strafeState = {
     if (Math.random() * 100 > 50) {
       alien.shoot();
     }
+    // transition to dive state maybe
+    if (Math.random() * 100 > 50) {
+      const divingAliens = alien.engine.getObjectsByState(zigZagDiveState);
+      if (!divingAliens) {
+        alien.fsm.transition(zigZagDiveState, true);
+      } 
+    }
     return;
   }
 };
@@ -273,12 +277,13 @@ const flashState = {
   nextStates: [stateNames.dying],
   detectCollisions: false,
   processUpdates: false,
-  minimumExecutionInterval: 500,
-  minimumStateDuration: 3000,
+  minimumExecutionInterval: 300,
+  minimumStateDuration: 2000,
+  force: true,
   execute: (alien) => {
-    if ((alien.fsm.currentState.minimumStateDuration || 0) <= alien.fsm.currentState.lastExecutionTime - alien.fsm.currentState.startTime) {
+    if ((alien.fsm.currentState.minimumStateDuration || 0) <= alien.fsm.lastExecutionTime - alien.fsm.startTime) {
       // we've done our time, transition to next state
-      alien.fsm.transition(alien.fsm.states[stateNames.dying]);
+      alien.fsm.transition(dyingState);
     }
     // invert drawable state
     alien.canDraw = !alien.canDraw;
@@ -296,7 +301,8 @@ const alienFSMStates = () => {
     landed: landedState,
     pause: pauseState,
     resume: resumeState,
-    flash: flashState
+    flash: flashState,
+    dying: dyingState
   }; 
 };
 

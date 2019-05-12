@@ -175,7 +175,7 @@ Engine.prototype.getObjectById = function(id) {
 }
 
 Engine.prototype.getObjectsById = function(id) {
-  const objs = this.gameObjects.filter(function(obj) {return obj.id === id});
+  const objs = this.gameObjects.filter(function(obj) { return obj.id === id; });
   return (objs.length > 0) ? objs : undefined;
 }
 
@@ -185,7 +185,12 @@ Engine.prototype.getObjectByType = function(type) {
 }
 
 Engine.prototype.getObjectsByType = function(type) {
-  const objs = this.gameObjects.filter(function(obj) {return obj.type === type});
+  const objs = this.gameObjects.filter(function(obj) { return obj.type === type; });
+  return (objs.length > 0) ? objs : undefined;
+}
+
+Engine.prototype.getObjectsByState = function(fsmState) {
+  const objs = this.gameObjects.filter(function(obj) { return obj.fsm && obj.fsm.currentState && obj.fsm.currentState === fsmState; });
   return (objs.length > 0) ? objs : undefined;
 }
 
