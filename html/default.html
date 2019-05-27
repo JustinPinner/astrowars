@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Astro Wars</title>
+		<script>
+		function sheetLoaded() {
+		  // Do something interesting; the sheet has been loaded
+		}
+		function sheetError() {
+		  alert("An error occurred loading the stylesheet!");
+		}
+		</script>
+	</head>
+	<body>
+		<div id="bgdiv">
+			<canvas id="bgcanvas">
+			</canvas>	
+		</div>
+		<div id="mgdiv">
+			<canvas id="mgcanvas">
+			</canvas>	
+		</div>
+		<div id="fgdiv">
+			<canvas id="fgcanvas">
+				Your browser doesn't support the canvas element
+			</canvas>
+		</div>
+		<div id="ui-debug-top">
+			<div class="ui debug coord"></div>
+			<div class="ui debug vector"></div>
+			<div class="ui debug status"></div>
+			<div class="ui debug condition"></div>
+			<div class="ui debug npcs"></div>
+		</div>
+		<div id="ui-debug-bottom">
+			<div class="ui debug inputs"></div>
+			<div class="ui debug version"></div>
+		</div>
+		<script src="bundle.js"></script>
+	</body>
+</html>

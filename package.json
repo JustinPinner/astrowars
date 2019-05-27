@@ -1,0 +1,30 @@
+{
+  "name": "astrowars",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "scripts": {
+    "test": "echo \"No tests specified\"",
+    "build": "webpack"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JustinPinner/astrowars.git"
+  },
+  "keywords": [],
+  "author": "Justin Pinner",
+  "license": "GPL-3.0-only",
+  "bugs": {
+    "url": "https://github.com/JustinPinner/astrowars/issues"
+  },
+  "homepage": "https://github.com/JustinPinner/astrowars#readme",
+  "devDependencies": {
+    "css-loader": "^2.1.0",
+    "style-loader": "^0.23.1",
+    "webpack": "^4.28.3",
+    "webpack-cli": "^3.2.0"
+  },
+  "dependencies": {
+    "uuid": "^3.3.2"
+  }
+}
