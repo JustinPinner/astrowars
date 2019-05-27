@@ -1,4 +1,4 @@
-import { Keys } from '../js/ui/keys';
+import { Keys } from '/Users/Justin_Pinner/code/EccentricEngine/ui/keys';
 
 const processor = (pressedKey, isPressed, host) => {
   switch (pressedKey) {

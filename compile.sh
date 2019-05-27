@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# ensure you have run 
+#  npm install --save-dev webpack 
+#  npm install -D webpack-cli
+# before compiling
+
 echo 'runnning webpack...'
 npm run build
 

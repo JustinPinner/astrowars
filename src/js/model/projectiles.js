@@ -1,6 +1,6 @@
 import { onUpdateMissile, onUpdateBomb } from '../behaviour/projectileActions';
+import { Point2D } from '/Users/Justin_Pinner/code/EccentricEngine/lib/2d';
 import { CellBasedGameObject } from './cellBasedGameObject';
-import { Point2D } from '../../js/lib/2d';
 
 const playerMissileConf = {
   type: 'missile',

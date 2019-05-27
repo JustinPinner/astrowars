@@ -1,11 +1,12 @@
 // main game definition and loop
 
-import Engine from './engine/engine';
-import { CustomConfig } from '../custom/config';
+import { Engine } from'/Users/Justin_Pinner/code/EccentricEngine/engine';
+
+import { CustomConfig } from './config';
 import '../css/game.css';
 import { 
   initDemoMode 
-} from '../custom/behaviour/gameActions';
+} from './behaviour/gameActions';
 
 const onSetup = (gameEngine) => {
   // write your custom setup code here - runs after gameEngine's default setup

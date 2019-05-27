@@ -14,7 +14,7 @@ import {
 } from './model/aliens';
 import { 
   Keys 
-} from '../js/ui/keys';
+} from '/Users/Justin_Pinner/code/EccentricEngine/ui/keys';
 import { 
   onPlayerUpdate,
   playerCapsuleFSMStates, 

@@ -1,4 +1,5 @@
-import GameObject from '../../js/model/gameObject';
+ 
+import { GameObject } from '/Users/Justin_Pinner/code/EccentricEngine/model/gameObject';
 
 // A super-class derived from a generic GameObject that all our custom 
 // game objects will extend.
@@ -80,4 +81,6 @@ CellBasedGameObject.prototype.preDraw = function() {
   this.selectSprite(this.currentCell);
 }
 
-export { CellBasedGameObject };
+export { 
+  CellBasedGameObject 
+};
