@@ -1,4 +1,4 @@
-import { Keys } from '/Users/Justin_Pinner/code/EccentricEngine/ui/keys';
+const Keys = require('/Users/Justin_Pinner/code/EccentricEngine/build/Eccentric.Engine').Keys;
 
 const processor = (pressedKey, isPressed, host) => {
   switch (pressedKey) {

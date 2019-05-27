@@ -1,4 +1,6 @@
 
+const Keys = require('/Users/Justin_Pinner/code/EccentricEngine/build/Eccentric.Engine').Keys;
+
 import {
   showScore,
   gameStart,
@@ -12,9 +14,6 @@ import {
 import {
   Alien
 } from './model/aliens';
-import { 
-  Keys 
-} from '/Users/Justin_Pinner/code/EccentricEngine/ui/keys';
 import { 
   onPlayerUpdate,
   playerCapsuleFSMStates, 

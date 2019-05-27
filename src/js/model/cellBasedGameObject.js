@@ -1,5 +1,5 @@
  
-import { GameObject } from '/Users/Justin_Pinner/code/EccentricEngine/model/gameObject';
+const GameObject = require('/Users/Justin_Pinner/code/EccentricEngine/build/Eccentric.Engine').GameObject;
 
 // A super-class derived from a generic GameObject that all our custom 
 // game objects will extend.
