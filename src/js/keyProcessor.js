@@ -1,4 +1,4 @@
-const Keys = require('/Users/Justin_Pinner/code/EccentricEngine/build/Eccentric.Engine').Keys;
+const Keys = require('eccentric-engine/dist/Engine').Keys;
 
 const processor = (pressedKey, isPressed, host) => {
   switch (pressedKey) {

@@ -1,5 +1,5 @@
 
-const Keys = require('/Users/Justin_Pinner/code/EccentricEngine/build/Eccentric.Engine').Keys;
+const Keys = require('eccentric-engine/dist/Engine').Keys;
 
 import {
   showScore,
