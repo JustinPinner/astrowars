@@ -25,6 +25,8 @@
     "webpack-cli": "^3.2.0"
   },
   "dependencies": {
+    "@justinpinner/eccentric-engine": "file:../EccentricEngine",
+    "eccentric-engine": "^1.0.0",
     "uuid": "^3.3.2"
   }
 }

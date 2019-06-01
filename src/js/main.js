@@ -1,13 +1,6 @@
 // main game definition and loop
 
-// TODO:
-// When EccentricEngine is published, update imports here and in; 
-//  projectiles.js
-//  cellBasedGameObject.js
-//  config.js
-//  keyProcessor.js
-
-const Engine = require('/Users/Justin_Pinner/code/EccentricEngine/build/Eccentric.Engine').Engine;
+const Engine = require('eccentric-engine/dist/Engine').Engine;
 
 import { CustomConfig } from './config';
 import '../css/game.css';
