@@ -1,7 +1,6 @@
 // main game definition and loop
 
-const Engine = require('eccentric-engine/dist/Engine').Engine;
-
+import { Engine } from 'eccentric-engine/dist/Engine';
 import { CustomConfig } from './config';
 import '../css/game.css';
 import { 
