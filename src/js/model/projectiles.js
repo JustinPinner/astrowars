@@ -1,6 +1,6 @@
 import { onUpdateMissile, onUpdateBomb } from '../behaviour/projectileActions';
 import { CellBasedGameObject } from './cellBasedGameObject';
-const Point2D = require('eccentric-engine/dist/Engine').Point2D;
+import { Point2D } from 'eccentric-engine/dist/Engine'; 
 
 const playerMissileConf = {
   type: 'missile',
