@@ -1,4 +1,4 @@
-import { Keys } from 'eccentric-engine/dist/Engine';
+import { Keys } from 'eccentric-engine/Engine';
 
 const processor = (pressedKey, isPressed, host) => {
   switch (pressedKey) {

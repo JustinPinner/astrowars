@@ -61,6 +61,5 @@ const onUpdateBomb = (bombObj) => {
 
 export { 
   onUpdateMissile, 
-  onUpdateBomb, 
-  testMissileCollision 
+  onUpdateBomb
 }

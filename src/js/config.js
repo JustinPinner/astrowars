@@ -1,5 +1,5 @@
 
-import { Keys } from 'eccentric-engine/dist/Engine';
+import { Keys } from 'eccentric-engine/Engine';
 
 import {
   showScore,
