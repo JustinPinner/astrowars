@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # ensure you have run 
+#  npm install eccentric-engine
 #  npm install --save-dev webpack 
 #  npm install -D webpack-cli
 # before compiling

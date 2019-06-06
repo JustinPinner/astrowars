@@ -1,6 +1,6 @@
 // main game definition and loop
 
-import { Engine } from 'eccentric-engine/dist/Engine';
+import { Engine } from 'eccentric-engine/Engine';
 import { CustomConfig } from './config';
 import '../css/game.css';
 import { 
