@@ -6,6 +6,9 @@
 #  npm install -D webpack-cli
 # before compiling
 
+echo 'removing previous built assets...'
+rm -rf dist
+
 echo 'runnning webpack...'
 npm run build
 
@@ -16,3 +19,7 @@ echo 'copying html...'
 cp html/* dist/.
 
 echo 'done!'
+echo ''
+PWD=$(pwd)
+echo 'go to the path below in your browser to play;'
+echo "file://$PWD/dist/default.html"
