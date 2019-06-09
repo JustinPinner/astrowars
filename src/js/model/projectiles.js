@@ -7,7 +7,7 @@ const playerMissileConf = {
   state: 'launched',
   initialVelocity: {
     x: 0,
-    y: -8
+    y: -9
   },
   width: 6,
   height: 8,

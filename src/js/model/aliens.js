@@ -32,15 +32,34 @@ class Alien extends CellBasedGameObject {
     return this.type == this.engine.config.fighter.type;
   }
   get pointsValue() {
-    if (this.isCommandShip) {
-      return 50;
+    // Command ships are always worth 100 pts but can only be hit during phase 3.
+    // Warships 'hovering' are worth 10 in row 7 and 20 in row 8 
+    // but if they're diving, they're worth 50 during phase 1 and 70 during pase 2.
+    // However in the original game, the diving warship variant is sometomes only worth 
+    // 40 pts during phase 1, but I can't quite pin down why that's the case, so 
+    // I'm leaving those at 50 ¯\_(ツ)_/¯      
+    let points = 0;
+    const row = this.currentCell.row;
+    const phase = this.engine.config.game.phase;
+    
+    switch (this.type) {
+      case this.engine.config.commandShip.type:
+        if ( phase == 3 ) {
+          points = 100;
+        }
+        break;
+      case (this.engine.config.warship.type):
+        switch (phase) {
+          case 1: 
+            points = row == 8 ? 20 : row == 7 ? 10 : 50;          
+            break;
+          case 2: 
+            points = 70;
+            break;
+        }
+        break;
     }
-    if (this.isWarship) {
-      return 20;
-    }
-    if (this.isFighter) {
-      return 30;
-    }
+    return points;
   }
 } 
 
