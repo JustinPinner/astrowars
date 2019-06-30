@@ -62,7 +62,7 @@ const nextAvailableCell = (alien, moveInstruction, canWrap) => {
     relativeRow = Math.random() * 100 > 50 ? moveInstruction.vertical.up : moveInstruction.vertical.down;     
   }
 
-  if (alien.isCommandShip && alien.engine.config.phase !== 3) {
+  if (alien.isCommandShip && alien.engine.currentPhase !== 3) {
     relativeRow = 0;
   }
 
@@ -202,7 +202,7 @@ const shotState = {
   detectCollisions: false,
   execute: (alien) => {
     const engine = alien.engine;
-    if (!alien.isCommandShip || (alien.isCommandShip && engine.config.game.phase == 3)) { 
+    if (!alien.isCommandShip || (alien.isCommandShip && alien.engine.currentPhase == 3)) { 
       engine.eventSystem.dispatchEvent(engine.id, {action: 'PLAYSOUND', value: (alien.conf.soundEffects ? alien.conf.soundEffects['die'] : engine.defaultSoundEffects['die'])});
       engine.eventSystem.dispatchEvent(engine.id, {action: 'ADDPLAYERPOINTS', value: alien.pointsValue});
       engine.eventSystem.dispatchEvent(engine.id, {action: 'ALIENDEATH', value: alien.type});
@@ -222,12 +222,14 @@ const strafeState = {
     if (freeCell) {
       alien.moveToCell(freeCell);
     }
+    // command ships drop many bombs!
+    const bombChance = alien.isCommandShip ? 5 : 50;
     // drop bomb maybe
-    if (Math.random() * 100 > 50) {
+    if (Math.random() * 100 > bombChance) {
       alien.shoot();
     }
     // transition to dive state maybe
-    if (Math.random() * 100 > 50) {
+    if (!alien.isCommandShip && Math.random() * 100 > 50) {
       const divingAliens = alien.engine.getObjectsByState(zigZagDiveState);
       if (!divingAliens) {
         alien.fsm.transition(zigZagDiveState, true);
@@ -242,7 +244,7 @@ const idleState = {
   nextStates: [stateNames.strafe, stateNames.shot],
   detectCollisions: false,
   execute: (alien) => {
-    if (alien.isCommandShip && alien.engine.phase == 3) {
+    if (alien.isCommandShip && alien.engine.currentPhase == 3) {
       alien.fsm.transition(strafeState);
     }
   }

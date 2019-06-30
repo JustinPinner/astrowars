@@ -3,8 +3,8 @@ import { Keys } from 'eccentric-engine/Engine';
 const processor = (pressedKey, isPressed, host) => {
   switch (pressedKey) {
     case Keys.SPACE:
-      if (host.gameEngine && host.gameEngine.config.game.phase == 0) {
-        host.gameEngine.eventSystem.dispatchEvent(host.gameEngine.id, {action: "STARTGAME"});
+      if (host.gameEngine && host.gameEngine.currentPhase == 0) {
+        host.gameEngine.eventSystem.dispatchEvent(host.gameEngine.id, {action: "ENDCURRENTPHASE"});
       }
     case Keys.ARROWUP:
     case Keys.W:

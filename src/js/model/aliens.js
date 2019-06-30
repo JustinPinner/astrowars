@@ -40,7 +40,7 @@ class Alien extends CellBasedGameObject {
     // I'm leaving those at 50 ¯\_(ツ)_/¯      
     let points = 0;
     const row = this.currentCell.row;
-    const phase = this.engine.config.game.phase;
+    const phase = this.engine.currentPhase;
     
     switch (this.type) {
       case this.engine.config.commandShip.type:

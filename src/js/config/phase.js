@@ -16,7 +16,8 @@ export const phase = (phase) => {
         alienState: (alienType) => {
           const states = alienFSMStates();
           return (alienType == 'warship') ? states.strafe : states.idle;
-        }
+        },
+        interstitialAtEnd: true
       };
     case 1:
       return {
@@ -30,7 +31,8 @@ export const phase = (phase) => {
         alienState: (alienType) => {
           const states = alienFSMStates();
           return (alienType == 'warship') ? states.hover : states.idle;
-        }
+        },
+        interstitialAtEnd: true
       };
     case 2:
       return {
@@ -44,7 +46,8 @@ export const phase = (phase) => {
         alienState: (alienType) => {
           const states = alienFSMStates();
           return (alienType == 'warship') ? states.zigZagDive : states.idle;
-        }
+        },
+        interstitialAtEnd: true
       };
     case 3:
       return {
@@ -58,7 +61,8 @@ export const phase = (phase) => {
         alienState: (alienType) => {
           const states = alienFSMStates();
           return (alienType == 'commandShip') ? states.strafe : states.idle;
-        }
+        },
+        interstitialAtEnd: true
       };
     case 4: 
       return {
@@ -68,7 +72,8 @@ export const phase = (phase) => {
         },
         alienConcurrent: () => {
           return 0;
-        }
+        },
+        interstitialAtEnd: true
       };
   }
 };
