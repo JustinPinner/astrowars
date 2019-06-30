@@ -1,9 +1,11 @@
 // main game definition and loop
 
-import { Engine } from 'eccentric-engine/Engine';
+import { AWEngine } from './custom/engine';
 import { Config } from './config/config';
 import { initDemoMode } from './behaviour/gameActions';
 import '../css/game.css';
+
+const phaseCheckId = 'CHECKPHASECOMPLETE';
 
 const customLifecycle = {
   onSetup: (gameEngine) => {
@@ -14,26 +16,20 @@ const customLifecycle = {
   }, 
   onStart: (gameEngine) => {
     // write custom startup code here
+
+    // check if player has completed the current phase - approx. once per second
+    const phaseCompleteCheck = (engine) => {
+      engine.eventSystem.dispatchEvent(engine.id, { action: phaseCheckId });
+    };
+    gameEngine.timers.add(phaseCheckId, null, 1000, phaseCompleteCheck, gameEngine);
+    gameEngine.timers.start(phaseCheckId);
   }, 
   onTick: (gameEngine) => {
     // write custom global game state update code here - your code runs after Engine's tick function completes
-    // only do this once per second
-    const phaseCheckId = 'CHECKPHASECOMPLETE';
-    if (gameEngine.timing[phaseCheckId]) {
-      const lastTime = gameEngine.timing[phaseCheckId].last;
-      if (Date.now() - lastTime >= 1000) {
-        gameEngine.timerStop(phaseCheckId);
-        gameEngine.eventSystem.dispatchEvent(gameEngine.id, { action: phaseCheckId });
-        gameEngine.timerStart(phaseCheckId);
-        }  
-    } else {
-      gameEngine.eventSystem.dispatchEvent(gameEngine.id, { action: phaseCheckId });
-      gameEngine.timerStart(phaseCheckId);
-    }  
   }
 };
 
-const game = new Engine(Config, customLifecycle);
+const game = new AWEngine(Config, customLifecycle);
 
 (function() {
   game.start();

@@ -32,12 +32,12 @@ class Player extends CellBasedGameObject {
 Player.prototype.canMoveVertically = function (dir) {
   switch (dir) {
     case 1:  // up
-      if (this.isPlayerCapsule && this.engine.config.phase == 3 && this.state == 'launch') {
+      if (this.isPlayerCapsule && this.engine.currentPhase == 3 && this.state == 'launch') {
         return true;
       }      
       break
     case -1:  // down
-      if (this.isPlayerCapsule && this.engine.phase == 3 && this.state == 'landing') {
+      if (this.isPlayerCapsule && this.engine.currentPhase == 3 && this.state == 'landing') {
         return true;
       }      
       break;
@@ -46,7 +46,7 @@ Player.prototype.canMoveVertically = function (dir) {
 };
 
 Player.prototype.canMoveHorizontally = function (dir) {
-  if (this.isPlayerBase && this.engine.config.phase == 3 && this.state == 'scroll') {
+  if (this.isPlayerBase && this.engine.currentPhase == 3 && this.state == 'scroll') {
     switch (dir) {
       case -1:  // left
         return false;

@@ -3,7 +3,8 @@
 import { phase } from './phase';
 import {
   showScore,
-  gameStart,
+  // gameStart,
+  runInterstitial,
   spawnWarships,
   nextPhase
 } from '../behaviour/gameActions';
@@ -87,17 +88,19 @@ export const game = () => {
     level: 1,
     playerPoints: 20,
     playerLives: 5,
-    spawnedCommandShips: 0,
-    spawnedWarships: 0,
     eventListener: (engine, evt) => {      
       if (evt && evt.action) {
         switch (evt.action) {
-          case 'STARTGAME':
-            gameStart(engine);
+          case 'HOLD':
+            if (!isNaN(evt.value) && evt.onTimeUp) {
+              engine.timers.pauseAll();
+              engine.timers.add('HOLD', evt.value, null, evt.onTimeUp, engine);
+              engine.timers.start('HOLD'); 
+            }
             break;
 
           case 'ADDPLAYERPOINTS': 
-            engine.config.game.playerPoints = engine.config.game.playerPoints ? engine.config.game.playerPoints += evt.value : evt.value ;
+            engine.playerPoints = engine.playerPoints ? engine.playerPoints += evt.value : evt.value ;
             showScore(engine);
             break;
 
@@ -143,17 +146,17 @@ export const game = () => {
             break;
 
           case 'ALIENDEATH':
-            const phase = engine.config.phases(engine.config.game.phase);
+            const phase = engine.config.phases(engine.currentPhase);
             switch (evt.value) {
               case 'warship':
-                if (engine.config.game.spawnedWarships && engine.config.game.spawnedWarships < phase.alienTotal('warship')) {
-                  // spawn a new warship object
+                if (engine.spawnedWarships && engine.spawnedWarships < phase.alienTotal('warship')) {
+                  // spawn a new warship
                   spawnWarships(engine, 1);
                 }
                 break;
               case 'commandShip':
-                if (engine.config.game.spawnedCommandShips && engine.config.game.spawnedCommandShips < phase.alienTotal('commandShip')) {
-                  // spawn a new warship object
+                if (engine.spawnedCommandShips && engine.spawnedCommandShips < phase.alienTotal('commandShip')) {
+                  // spawn a new commandship
                   spawnCommandShips(engine, 1);
                 }
                 break;
@@ -179,13 +182,23 @@ export const game = () => {
                 gameObject.canDraw = true;
                 engine.eventSystem.dispatchEvent(gameObject.id, {target: 'FSM', action: 'SET', state: gameObject.fsm.states.live});
                 if (gameObject.isPlayerCapsule) {
-                  engine.eventSystem.dispatchEvent(engine.id, {action: 'RESUMEPLAY'});
+                  engine.eventSystem.dispatchEvent(engine.id, {action: 'RESUMEOBJECTS'});
                 } 
               }             
             }
             break;
-          
-          case 'RESUMEPLAY':
+
+          case 'PAUSEOBJECTS':
+            for (const obj in engine.objects) {
+              const gameObject = engine.objects[obj];
+              if (gameObject.fsm) {
+                gameObject.fsm.pushState();
+                engine.eventSystem.dispatchEvent(gameObject.id, {target: 'FSM', action: 'SET', state: gameObject.fsm.states.pause});
+              }
+            }
+            break;  
+
+          case 'RESUMEOBJECTS':
             for (const obj in engine.objects) {
               const gameObject = engine.objects[obj];
               if (gameObject.fsm && gameObject.fsm.savedState) {
@@ -201,20 +214,38 @@ export const game = () => {
             break;
 
           case 'CHECKPHASECOMPLETE':
-            switch (engine.config.game.phase) {
-              case (1 || 2):
+            switch (engine.currentPhase) {
+              case 1:
+              case 2:
                 if (!engine.getObjectsByType('warship')) {
-                  nextPhase(engine);
+                  engine.eventSystem.dispatchEvent(engine.id, {action: 'ENDCURRENTPHASE'});
                 }  
                 break;
               case 3:
                 if (!engine.getObjectsByType('commandShip')) {
-                  nextPhase(engine);
+                  engine.eventSystem.dispatchEvent(engine.id, {action: 'ENDCURRENTPHASE'});
                 }  
+                break;
+              case 4:
+                // if counter/bonus = 0, or capsule crashed, or docked, phase is complete
                 break;
             }
             break;
 
+          case 'ENDCURRENTPHASE':
+            if (engine.config.game.phases(engine.currentPhase).interstitialAtEnd) {
+              runInterstitial(engine);
+            } else {
+              nextPhase(engine);
+            }
+            break;
+
+          case 'BEGINNEXTPHASE':
+            engine.timers.cancel('HOLD');
+            nextPhase(engine);
+            engine.timers.startAll();
+            break;
+  
           case 'GAMEOVER':
             for (const obj in engine.objects) {
               const gameObject = engine.objects[obj];

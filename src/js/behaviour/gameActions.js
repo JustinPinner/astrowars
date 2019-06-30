@@ -1,18 +1,8 @@
 
-import { 
-  GameBoard,
-  Cell 
-} from '../model/gameBoard';
-import {
-  PlayerCapsule, 
-  PlayerBase 
-} from '../model/players';
-import {
-  Digit
-} from '../model/score';
-import { 
-  Alien 
-} from '../model/aliens';
+import { GameBoard, Cell } from '../model/gameBoard';
+import { PlayerCapsule, PlayerBase } from '../model/players';
+import { Digit } from '../model/score';
+import { Alien } from '../model/aliens';
 
 const initGameBoard = (gameEngine) => {
   gameEngine.gameBoard = new GameBoard(gameEngine.config.game.gameBoardRows, gameEngine.config.game.gameBoardColumns);
@@ -34,41 +24,16 @@ const initGameBoard = (gameEngine) => {
   }
 };
 
-const showLevel = (gameEngine) => {
+const displayDigits = (gameEngine, intScore) => {
   if (!gameEngine.gameBoard) {
     return;
   }
-  const levelRow = 10;  // we're re-using the score location
-  const level = gameEngine.config.game.level.toString();
-  for (let d=0; d < level.length; d+=1) {
-    const pad = gameEngine.gameBoard.columns - level.length - 1;
+  const digitRow = 10;
+  const stringNum = intScore.toString();
+  for (let d=0; d < stringNum.length; d+=1) {
+    const pad = gameEngine.gameBoard.columns - stringNum.length - 1;
     const col = pad + d;
-    const cell = gameEngine.gameBoard.board[levelRow][col];
-    if (cell.contents.length < 1) {
-      const digit = new Digit(
-        gameEngine.config.digit,
-        {
-          x: cell.x, 
-          y: cell.y
-        },
-        gameEngine  
-      );
-      digit.value = Number(level.substr(d, 1));
-      cell.addObject(digit);
-    }
-  }
-};
-
-const showScore = (gameEngine) => {
-  if (!gameEngine.gameBoard) {
-    return;
-  }
-  const scoreRow = 10;
-  const score = gameEngine.config.game.playerPoints.toString();
-  for (let d=0; d < score.length; d+=1) {
-    const pad = gameEngine.gameBoard.columns - score.length - 1;
-    const col = pad + d;
-    const cell = gameEngine.gameBoard.board[scoreRow][col];
+    const cell = gameEngine.gameBoard.board[digitRow][col];
     const digit = (cell.contents[0] && cell.contents[0].isDigit) ? cell.contents[0] : cell.addObject(new Digit(
       gameEngine.config.digit,
       {
@@ -77,16 +42,28 @@ const showScore = (gameEngine) => {
       },
       gameEngine  
     ));
-    digit.value = Number(score.substr(d, 1));
+    digit.value = Number(stringNum.substr(d, 1));
   }
-}
+};
+
+const showLevel = (gameEngine) => {
+  displayDigits(gameEngine, gameEngine.config.game.level);
+};
+
+const showLives = (gameEngine) => {
+  displayDigits(gameEngine, gameEngine.playerLives);
+};
+
+const showScore = (gameEngine) => {
+  displayDigits(gameEngine, gameEngine.playerPoints);
+};
 
 const spawnCommandShips = (gameEngine, qty) => {
   // command ships occupy the row below the score (9 by default)
   // in the first phase they don't do anything though, so don't include 
   // them in the count of aliens spawned
   const commandShipRow = gameEngine.gameBoard.rows - 2;
-  const phase = gameEngine.config.game.phases(gameEngine.config.game.phase);
+  const phase = gameEngine.config.game.phases(gameEngine.currentPhase);
   const numShips = qty || phase.alienConcurrent('commandShip');
   for (let c = 1; c < numShips + 1; c += 1) {
     const conf = gameEngine.config.commandShip;
@@ -99,13 +76,13 @@ const spawnCommandShips = (gameEngine, qty) => {
     // set the alien's default behaviour
     conf.fsmStates.default = phase.alienState('commandShip'); // conf.fsmStates['idle'];
     gameEngine.gameBoard.board[commandShipRow][c].gameObject = new Alien(conf, spawnPos, gameEngine);
-    gameEngine.config.game.spawnedCommandShips = gameEngine.config.game.spawnedCommandShips ? gameEngine.config.game.spawnedCommandShips += 1 : 1; 
+    gameEngine.spawnedCommandShips = gameEngine.spawnedCommandShips ? gameEngine.spawnedCommandShips += 1 : 1; 
   }
 };
 
 const spawnWarships = (gameEngine, qty) => {
   // alien warships hang out on rows (8-7)
-  const phase = gameEngine.config.game.phases(gameEngine.config.game.phase);
+  const phase = gameEngine.config.game.phases(gameEngine.currentPhase);
   const numShips = qty || phase.alienConcurrent('warship');
   for (let warship = 0; warship < numShips; warship += 1) {
     const row = phase.name == 'dive' ? gameEngine.gameBoard.rows - 2 : (gameEngine.gameBoard.rows - 5) + Math.ceil((Math.random() * 2));
@@ -120,7 +97,7 @@ const spawnWarships = (gameEngine, qty) => {
       y: cell.y
     };
     cell.addObject(new Alien(conf, spawnPos, gameEngine));
-    gameEngine.config.game.spawnedWarships = gameEngine.config.game.spawnedWarships ? gameEngine.config.game.spawnedWarships += 1 : 1; 
+    gameEngine.spawnedWarships = gameEngine.spawnedWarships ? gameEngine.spawnedWarships += 1 : 1; 
   }  
 };
 
@@ -128,7 +105,14 @@ const spawnPlayerCapsule = (gameEngine) => {
   // prepare the player's starting row and column
   const playerCapsuleConfig = gameEngine.config.playerCapsule;
   const playerCapsuleRow = playerCapsuleConfig.startRow;
-  const playerColumn = playerCapsuleConfig.startColumn;
+  let playerColumn;
+  if (gameEngine.currentPhase != 4) {
+    playerColumn = playerCapsuleConfig.startColumn;
+  } else {
+    const snp = gameEngine.snapshotLoad();
+    const playerObjs = snp && snp.data && snp.data.gameObjects.filter(function(obj) {return obj.isPlayerCapsule});
+    playerColumn = playerObjs.length > 0 ? playerObjs[0].currentCell.column : playerCapsuleConfig.startColumn;
+  }
   const cell = gameEngine.gameBoard.board[playerCapsuleRow][playerColumn];
   const playerCapsule = new PlayerCapsule(
     playerCapsuleConfig,
@@ -167,38 +151,86 @@ const reset = (gameEngine) => {
   // reset the gameboard
   initGameBoard(gameEngine);
   // reset score
-  gameEngine.config.game.playerPoints = 0;
+  gameEngine.playerPoints = 0;
   // reset alien counts
-  gameEngine.config.game.spawnedCommandShips = 0;
-  gameEngine.config.game.spawnedWarships = 0;
+  gameEngine.spawnedCommandShips = 0;
+  gameEngine.spawnedWarships = 0;
   // reset player lives
-  gameEngine.config.game.playerLives = 5;
+  gameEngine.playerLives = 5;
 };
 
 const initDemoMode = (gameEngine) => {
   reset(gameEngine);
-  gameEngine.config.game.phase = 0;
+  gameEngine.currentPhase = 0;
   showLevel(gameEngine);
   spawnCommandShips(gameEngine);  
   spawnWarships(gameEngine);
 };
 
-const gameStart = (gameEngine) => {
-  reset(gameEngine);
-  gameEngine.config.game.phase = 1;
-  showScore(gameEngine);
-  spawnCommandShips(gameEngine);  
-  spawnWarships(gameEngine);
-  spawnPlayerCapsule(gameEngine);
-  spawnPlayerBase(gameEngine);
+const runInterstitial = (gameEngine) => {
+  const beginNextPhase = 'BEGINNEXTPHASE';
+  switch (gameEngine.currentPhase) {
+    case 0:
+      reset(gameEngine);
+      showLives(gameEngine);
+      spawnPlayerBase(gameEngine);
+      spawnPlayerCapsule(gameEngine);
+      gameEngine.eventSystem.dispatchEvent(
+        gameEngine.id, 
+        {
+          action: 'HOLD', 
+          value: 3000, 
+          onTimeUp: (engine) => {
+            engine.eventSystem.dispatchEvent(engine.id, {action: beginNextPhase});
+          }
+        }
+      );
+      break;
+    case 1:
+    case 2:
+    case 3:
+      const snp = gameEngine.snapshotSave();
+      reset(gameEngine);
+      gameEngine.playerLives = snp.data.playerLives;
+      showLives(gameEngine);
+      spawnCommandShips(gameEngine);
+      spawnPlayerBase(gameEngine);
+      spawnPlayerCapsule(gameEngine);
+      gameEngine.eventSystem.dispatchEvent(
+        gameEngine.id, 
+        {
+          action: 'PAUSEOBJECTS'
+        }
+      );
+      gameEngine.eventSystem.dispatchEvent(
+        gameEngine.id, 
+        {
+          action: 'HOLD', 
+          value: 3000, 
+          onTimeUp: (engine) => {
+            engine.restore();
+            engine.eventSystem.dispatchEvent(engine.id, {action: beginNextPhase});
+          }
+        }
+      );
+      break;
+    case 4:
+      debugger;
+  }
 };
 
 const nextPhase = (gameEngine) => {
-  const score = gameEngine.config.game.playerPoints;
-  const phase = gameEngine.config.game.phase;
+  // testing specific phases from start...
+  // if (gameEngine.currentPhase == 0) {
+  //   gameEngine.currentPhase = 2;  // start at phase 3
+  // }
+  const score = gameEngine.playerPoints || 0;
+  const phase = gameEngine.currentPhase || 0;
+  const lives = gameEngine.playerLives || 5;
   reset(gameEngine);
-  gameEngine.config.game.playerPoints = score;
-  gameEngine.config.game.phase = phase + 1;
+  gameEngine.playerPoints = score;
+  gameEngine.currentPhase = (phase > 4) ? 1: phase + 1;
+  gameEngine.playerLives = lives;
   showScore(gameEngine);
   spawnCommandShips(gameEngine);  
   spawnWarships(gameEngine);
@@ -211,6 +243,6 @@ export {
   initDemoMode,
   spawnWarships,
   spawnCommandShips,
-  gameStart,
+  runInterstitial,
   nextPhase
 }
