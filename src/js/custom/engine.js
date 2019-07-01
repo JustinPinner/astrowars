@@ -12,6 +12,7 @@ class AWEngine extends Engine {
 }
 
 AWEngine.prototype.snapshotSort = function(descending) {
+  // snapshots should be treated as a LIFO stack: the latest save is always at element [0]
   this.snapshots = this.snapshots.sort(function compare(a, b) {
     if (a.time < b.time) {
       return descending ? 1 : -1;
@@ -51,7 +52,7 @@ AWEngine.prototype.snapshotLoad = function(time) {
   }
   return time 
     ? this.snapshots.partition(function(snp) { return snp.time == time; })[0]
-    : this.snapshots[this.snapshots.length - 1];
+    : this.snapshots[0];
 }
 
 AWEngine.prototype.restore = function() {
