@@ -111,7 +111,7 @@ const spawnPlayerCapsule = (gameEngine) => {
   } else {
     const snp = gameEngine.snapshotLoad();
     const playerObjs = snp && snp.data && snp.data.gameObjects.filter(function(obj) {return obj.isPlayerCapsule});
-    playerColumn = playerObjs.length > 0 ? playerObjs[0].currentCell.column : playerCapsuleConfig.startColumn;
+    playerColumn = playerObjs && playerObjs.length > 0 ? playerObjs[0].currentCell.column : playerCapsuleConfig.startColumn;
   }
   const cell = gameEngine.gameBoard.board[playerCapsuleRow][playerColumn];
   const playerCapsule = new PlayerCapsule(
@@ -123,6 +123,9 @@ const spawnPlayerCapsule = (gameEngine) => {
     gameEngine
   );
   cell.addObject(playerCapsule);
+  if (gameEngine.currentPhase == 4) {
+    gameEngine.eventSystem.dispatchEvent(playerCapsule.id, {target: 'FSM', action: 'SET', state: playerCapsule.fsm.states.launch});
+  }
 };
 
 const spawnPlayerBase = (gameEngine) => {
@@ -189,6 +192,7 @@ const runInterstitial = (gameEngine) => {
     case 1:
     case 2:
     case 3:
+    case 4:
       const snp = gameEngine.snapshotSave();
       reset(gameEngine);
       gameEngine.playerLives = snp.data.playerLives;
@@ -214,22 +218,20 @@ const runInterstitial = (gameEngine) => {
         }
       );
       break;
-    case 4:
-      debugger;
   }
 };
 
 const nextPhase = (gameEngine) => {
   // testing specific phases from start...
   // if (gameEngine.currentPhase == 0) {
-  //   gameEngine.currentPhase = 2;  // start at phase 3
+  //   gameEngine.currentPhase = 3;  // start at phase 3
   // }
   const score = gameEngine.playerPoints || 0;
   const phase = gameEngine.currentPhase || 0;
   const lives = gameEngine.playerLives || 5;
   reset(gameEngine);
   gameEngine.playerPoints = score;
-  gameEngine.currentPhase = (phase > 4) ? 1: phase + 1;
+  gameEngine.currentPhase = (phase > 3) ? 1: phase + 1;
   gameEngine.playerLives = lives;
   showScore(gameEngine);
   spawnCommandShips(gameEngine);  

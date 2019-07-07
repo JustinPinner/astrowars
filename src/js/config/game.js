@@ -228,6 +228,26 @@ export const game = () => {
                 break;
               case 4:
                 // if counter/bonus = 0, or capsule crashed, or docked, phase is complete
+                let isComplete = false;
+                const playerCapsule = engine.playerCapsule;
+                const playerBase = engine.playerBase;
+                if (playerCapsule && playerCapsule.fsm) {
+                  switch (playerCapsule.fsm.currentState) {
+                    case playerCapsule.fsm.states.docked || playerCapsule.fsm.states.crashed:
+                      isComplete = true;
+                      break;
+                  }
+                }
+                if (!isComplete && (playerBase && playerBase.fsm)) {
+                  switch(playerBase.fsm.currentState) {
+                    case playerBase.fsm.states.docked || playerBase.fsm.states.crashed:
+                      isComplete = true;
+                      break;
+                  }
+                }
+                if (isComplete) {
+                  engine.eventSystem.dispatchEvent(engine.id, {action: 'ENDCURRENTPHASE'});
+                }  
                 break;
             }
             break;

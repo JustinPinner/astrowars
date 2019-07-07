@@ -1,9 +1,16 @@
+import {
+  horizontalMove,
+  verticalMove
+} from '../model/cellBasedMovement';
 
 const timing = {};
 
 const stateNames = {
   baseFollow: 'baseFollow',
-  baseScroll: 'baseScroll',
+  baseStartScroll: 'baseStartScroll',
+  baseScrolling: 'baseScrolling',
+  baseDocked: 'baseDocked', 
+  baseCrashed: 'baseCrash',
   playerBombed: 'playerBombed',
   dockingSuccess: 'dockingComplete',
   dockingFailed: 'dockingFailed',
@@ -13,13 +20,14 @@ const stateNames = {
   playerFlash: 'playerFlash',
   capsuleLaunch: 'capsuleLaunch',
   capsuleDescent: 'capsuleDescent', 
-  capsuleDock: 'capsuleDock', 
-  capsuleCrash: 'capsuleCrash'
+  capsuleDocked: 'capsuleDocked', 
+  capsuleCrashed: 'capsuleCrashed',
+  capsuleAscent: 'capsuleAscent'
 };
 
 const baseFollowState = {
   name: stateNames.baseFollow,
-  nextStates: [stateNames.playerBombed, stateNames.baseScroll],
+  nextStates: [stateNames.playerBombed, stateNames.baseStartScroll],
   detectCollisions: true,
   execute: (playerBase) => {
 		const playerCapsule = playerBase.engine.getObjectByType('playerCapsule');
@@ -33,13 +41,58 @@ const baseFollowState = {
   }
 };
 
-const baseScrollState = {
-  name: 'baseScroll',
-  nextStates: [stateNames.dockingSuccess, stateNames.dockingFailed],
+const baseStartScrollState = {
+  name: 'baseStartScroll',
+  nextStates: [stateNames.baseScrolling],
   detectCollisions: true,
   execute: (playerBase) => {
-    // move left/right
-    // drop bomb maybe
+    // enable vertical screen wrap
+    const canWrap = {
+      horizontal: true,
+      vertical: false
+    };
+    playerBase.engine.timers.add('BASESCROLL', null, 500, playerBase.moveRight.bind(playerBase), canWrap);
+    playerBase.engine.timers.start('BASESCROLL');
+    playerBase.fsm.transition(playerBase.fsm.states.scrolling);
+  }
+};
+
+const baseScrollingState = {
+  name: 'baseScrolling',
+  nextStates: [stateNames.crashed, stateNames.docked],
+  detectCollisions: true,
+  execute: (playerBase) => {
+    // do nothing - the timer created in baseStartScrollState will execute the moveRight code for us
+  }
+};
+
+const baseDockedState = {
+  name: stateNames.baseDocked,
+  nextStates: [stateNames.baseFollow],
+  detectCollisions: false,
+  processPlayerInputs: false,
+  execute: (playerBase) => {
+    // TODO:
+    // Show bonus score
+    // Show total score
+    // Switch base to follow mode
+    // Switch capsule to live mode
+    // Begin next phase
+  }
+};
+
+const baseCrashedState = {
+  name: stateNames.baseCrashed,
+  nextStates: [stateNames.baseFollow],
+  detectCollisions: false,
+  processPlayerInputs: false,
+  execute: (playerBase) => {
+    // TODO:
+    // Show bonus score
+    // Show total score
+    // Switch base to follow mode
+    // Switch capsule to live mode
+    // Begin next phase
   }
 };
 
@@ -78,9 +131,12 @@ const playerDieState = {
 
 const playerBaseFSMStates = {
   follow: baseFollowState,
-  scroll: baseScrollState,
+  scrollStart: baseStartScrollState,
+  scrolling: baseScrollingState,
   flash: playerFlashState,
   die: playerDieState,
+  docked: baseDockedState,
+  crashed: baseCrashedState,
   default: baseFollowState
 };
 
@@ -126,45 +182,90 @@ const capsuleHitState = {
 
 const capsuleLaunchState = {
   name: stateNames.capsuleLaunch,
+  nextStates: [stateNames.capsuleAscent, stateNames.capsuleDescent],
+  detectCollisions: false,
+  processPlayerInputs: false,
+  execute: (playerCapsule) => {
+    // Set bonus points to maximum
+    // Launch capsule
+    if (playerCapsule.canMoveVertically(verticalMove.up)) {
+      playerCapsule.engine.timers.add('CAPSULEASCENT', null, 1000, playerCapsule.moveUp.bind(playerCapsule));
+      playerCapsule.engine.timers.start('CAPSULEASCENT');
+      playerCapsule.fsm.transition(playerCapsule.fsm.states.ascent);
+    }
+  }
+};
+
+const capsuleAscentState = {
+  name: stateNames.capsuleAscent,
   nextStates: [stateNames.capsuleDescent],
   detectCollisions: false,
   processPlayerInputs: false,
   execute: (playerCapsule) => {
-    // TODO:
-    // Centre capsule and base
-    // Launch capsule
-    // Set bonus points to maximum
-    // Switch to descent mode at apogee
+    if (playerCapsule.currentCell.row < playerCapsule.engine.gameBoard.rows - 2) {
+      return;
+    }
+    const playerBase = playerCapsule.engine.playerBase;
+    playerCapsule.engine.timers.cancel('CAPSULEASCENT');
+    playerCapsule.engine.timers.add('CAPSULEDESCENT', null, 2000, playerCapsule.moveDown.bind(playerCapsule));
+    playerCapsule.engine.timers.start('CAPSULEDESCENT');
+    playerBase.fsm.transition(playerBase.fsm.states.scrollStart);
+    playerCapsule.fsm.transition(playerCapsule.fsm.states.descent);
   }
 };
 
 const capsuleDescentState = {
-  name: stateNames.capsuleLaunch,
-  nextStates: [stateNames.capsuleDock, stateNames.capsuleCrash],
+  name: stateNames.capsuleDescent,
+  nextStates: [stateNames.capsuleDocked, stateNames.capsuleCrashed],
   detectCollisions: true,
   processPlayerInputs: true,
   execute: (playerCapsule) => {
-    // TODO:
-    // Switch base to scroll mode
-    // Enable capsule collision detection
-    // Begin descent
-    // Begin bonus points countdown
-    // Switch to crash mode at bottom row
+    const playerBase = playerCapsule.engine.playerBase;
+    // decrement bonus points
+    // if bonus == 0; stop
+    if (playerCapsule.currentCell.row <= 1) {
+      playerCapsule.engine.timers.cancel('CAPSULEDESCENT');
+      playerCapsule.engine.timers.cancel('BASESCROLL');
+      if (playerBase.currentCell.column == playerBase.currentCell.column) {
+        // transition to docked state
+        playerCapsule.fsm.transition(playerCapsule.fsm.states.docked);
+        playerBase.fsm.transition(playerBase.fsm.states.docked);
+      } else {
+        // transition to crashed state
+        playerCapsule.fsm.transition(playerCapsule.fsm.states.crashed);
+        playerBase.fsm.transition(playerBase.fsm.states.crashed);
+      }
+    }
   }
 };
 
-const capsuleDockState = {
-  name: stateNames.capsuleLaunch,
-  nextStates: [stateNames.capsuleDock, stateNames.capsuleCrash],
+const capsuleDockedState = {
+  name: stateNames.capsuleDocked,
+  nextStates: [stateNames.capsuleLive],
   detectCollisions: false,
   processPlayerInputs: false,
   execute: (playerCapsule) => {
     // TODO:
-    // Switch base to scroll mode
-    // Enable capsule collision detection
-    // Begin descent
-    // Begin bonus points countdown
-    // Switch to crash mode at bottom row
+    // Show bonus score
+    // Show total score
+    // Switch base to follow mode
+    // Switch capsule to live mode
+    // Begin next phase
+  }
+};
+
+const capsuleCrashedState = {
+  name: stateNames.capsuleCrashed,
+  nextStates: [stateNames.capsuleLive],
+  detectCollisions: false,
+  processPlayerInputs: false,
+  execute: (playerCapsule) => {
+    // TODO:
+    // Show bonus score
+    // Show total score
+    // Switch base to follow mode
+    // Switch capsule to live mode
+    // Begin next phase
   }
 };
 
@@ -174,11 +275,13 @@ const playerCapsuleFSMStates = () => {
     live: capsuleLiveState,
     launch: capsuleLaunchState,
     descent: capsuleDescentState,
-    dock: capsuleDockState,
+    docked: capsuleDockedState,
+    crashed: capsuleCrashedState,
     die: playerDieState,
     respawn: capsuleRespawnState,
     hit: capsuleHitState,
-    flash: playerFlashState  
+    flash: playerFlashState,
+    ascent: capsuleAscentState  
   };
 };
 
@@ -187,6 +290,7 @@ const onPlayerUpdate = (playerObj) => {
     playerObj.fsm.execute();
   }
   processPlayerInputs(playerObj);
+	playerObj.updatePosition();
 };
 
 const playerBaseUpdate = (playerBaseObject) => {
@@ -194,11 +298,6 @@ const playerBaseUpdate = (playerBaseObject) => {
     playerBaseObject.fsm.execute();
     return;
   }
-};
-
-const direction = {
-  left: -1,
-  right: 1
 };
 
 const inputTimeoutElapsed = () => {
@@ -219,6 +318,7 @@ const processPlayerInputs = (playerObj) => {
   if (!playerObj.fsm.currentState.processPlayerInputs) {
     return;
   }
+  
   if (playerObj.engine.gamepad) {
 		const status = playerObj.engine.gamepad.status;
 		const buttons = playerObj.engine.gamepad.buttons;
@@ -227,10 +327,10 @@ const processPlayerInputs = (playerObj) => {
 		if (buttons.start) {
 			debugger;
 		}
-		if (sticks.left.left && inputTimeoutElapsed() && playerObj.canMoveHorizontally(direction.left)) {
+		if (sticks.left.left && inputTimeoutElapsed() && playerObj.canMoveHorizontally(horizontalMove.left)) {
       playerObj.moveLeft();
     }
-		if (sticks.left.right && inputTimeoutElapsed() && playerObj.canMoveHorizontally(direction.right)) {
+		if (sticks.left.right && inputTimeoutElapsed() && playerObj.canMoveHorizontally(horizontalMove.right)) {
       playerObj.moveRight();
 		}
 		if (buttons.a) {
@@ -242,21 +342,20 @@ const processPlayerInputs = (playerObj) => {
 		}
 	}
 	
-  if (playerObj.engine.keyHandler.pressed.left && inputTimeoutElapsed() && playerObj.canMoveHorizontally(direction.left)) {
+  if (playerObj.engine.keyHandler.pressed.left && inputTimeoutElapsed() && playerObj.canMoveHorizontally(horizontalMove.left)) {
     playerObj.moveLeft();
-  } else if (playerObj.engine.keyHandler.pressed.right && inputTimeoutElapsed() && playerObj.canMoveHorizontally(direction.right)) {
+  } else if (playerObj.engine.keyHandler.pressed.right && inputTimeoutElapsed() && playerObj.canMoveHorizontally(horizontalMove.right)) {
     playerObj.moveRight();
   }
+  
   if (playerObj.engine.keyHandler.pressed.enter) {
-    if (playerObj.state == 'landing') {
+    if (playerObj.fsm && playerObj.fsm.currentState && playerObj.fsm.currentState == playerObj.fsm.states.capsuleDescent) {
       playerObj.thrust();
     } else {
       playerObj.shoot();
     }
   }
 	
-	playerObj.updatePosition();
-
 };
 
 export { 

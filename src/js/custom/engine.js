@@ -9,6 +9,14 @@ class AWEngine extends Engine {
     this.playerLives = 0;
     this.currentPhase = 0;
   }
+  get playerCapsule() {
+    const capsuleObjs = this.gameObjects.filter(function(obj) { return obj.isPlayerCapsule; });
+    return capsuleObjs && capsuleObjs.length > 0 && capsuleObjs[0];
+  }
+  get playerBase() {
+    const baseObjs = this.gameObjects.filter(function(obj) { return obj.isPlayerBase; });
+    return baseObjs && baseObjs.length > 0 && baseObjs[0];  
+  }
 }
 
 AWEngine.prototype.snapshotSort = function(descending) {

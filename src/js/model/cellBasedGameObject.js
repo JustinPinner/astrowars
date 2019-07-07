@@ -1,5 +1,9 @@
  
 import { GameObject } from 'eccentric-engine/Engine';
+import { 
+  horizontalMove,
+  verticalMove 
+} from './cellBasedMovement';
 
 // A super-class derived from a generic GameObject that all our custom 
 // game objects will extend.
@@ -19,7 +23,7 @@ class CellBasedGameObject extends GameObject {
   }	
 }
 
-// some behaviours that are common to all our custom objects (may be overridden by descendant classes)
+// some behaviours that are common to all our custom objects (may be overridden by descendent classes)
 
 CellBasedGameObject.prototype.selectSprite = function(cell) {
   // draw sprite image based on default or row/col position
@@ -47,31 +51,45 @@ CellBasedGameObject.prototype.moveToCell = function (cell) {
 
 CellBasedGameObject.prototype.canMoveVertically = function (dir, canWrap) {
   switch (dir) {
-    case 1:  // up
+    case verticalMove.up:
       return (this.currentCell.row < this.engine.gameBoard.rows - 1) || canWrap;
-    case -1:  // down
+    case verticalMove.down:
       return (this.currentCell.row > 1) || canWrap;
   }
 };
 
 CellBasedGameObject.prototype.canMoveHorizontally = function (dir, canWrap) {
   switch (dir) {
-    case -1:  // left
+    case horizontalMove.left:
       return (this.currentCell.column > 0) || canWrap;
-    case 1:  // right
+    case horizontalMove.right:
       return (this.currentCell.column < this.engine.gameBoard.columns - 1) || canWrap;
   }
 };
 
-CellBasedGameObject.prototype.moveLeft = function() {
-  const maybeNeighbourCell = this.engine.gameBoard.cellNeighbour(this.currentCell, -1, 0);
+CellBasedGameObject.prototype.moveLeft = function(canWrap) {
+  const maybeNeighbourCell = this.engine.gameBoard.cellNeighbour(this.currentCell, horizontalMove.left, verticalMove.none, canWrap);
   if (maybeNeighbourCell) {
 		this.moveToCell(maybeNeighbourCell);
 	}
 }
 
-CellBasedGameObject.prototype.moveRight = function() {
-  let maybeNeighbourCell = this.engine.gameBoard.cellNeighbour(this.currentCell, 1, 0);
+CellBasedGameObject.prototype.moveRight = function(canWrap) {
+  let maybeNeighbourCell = this.engine.gameBoard.cellNeighbour(this.currentCell, horizontalMove.right, verticalMove.none, canWrap);
+  if (maybeNeighbourCell) {
+		this.moveToCell(maybeNeighbourCell);
+	}
+}
+
+CellBasedGameObject.prototype.moveUp = function(canWrap) {
+  const maybeNeighbourCell = this.engine.gameBoard.cellNeighbour(this.currentCell, horizontalMove.none, verticalMove.up, canWrap);
+  if (maybeNeighbourCell) {
+		this.moveToCell(maybeNeighbourCell);
+	}
+}
+
+CellBasedGameObject.prototype.moveDown = function(canWrap) {
+  const maybeNeighbourCell = this.engine.gameBoard.cellNeighbour(this.currentCell, horizontalMove.none, verticalMove.down, canWrap);
   if (maybeNeighbourCell) {
 		this.moveToCell(maybeNeighbourCell);
 	}
