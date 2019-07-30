@@ -8,6 +8,7 @@ class AWEngine extends Engine {
     this.playerPoints = 0;
     this.playerLives = 0;
     this.currentPhase = 0;
+    this.playerBonus = 0;
   }
   get playerCapsule() {
     const capsuleObjs = this.gameObjects.filter(function(obj) { return obj.isPlayerCapsule; });
@@ -16,6 +17,12 @@ class AWEngine extends Engine {
   get playerBase() {
     const baseObjs = this.gameObjects.filter(function(obj) { return obj.isPlayerBase; });
     return baseObjs && baseObjs.length > 0 && baseObjs[0];  
+  }
+}
+
+AWEngine.prototype.disposeAllObjects = function() {
+  for (const obj in this.gameObjects) {
+    this.gameObjects[obj].disposable = true;
   }
 }
 

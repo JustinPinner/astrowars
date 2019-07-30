@@ -2,6 +2,9 @@ import {
   horizontalMove,
   verticalMove
 } from '../model/cellBasedMovement';
+import {
+  showBonus
+} from './gameActions';
 
 const timing = {};
 
@@ -10,7 +13,7 @@ const stateNames = {
   baseStartScroll: 'baseStartScroll',
   baseScrolling: 'baseScrolling',
   baseDocked: 'baseDocked', 
-  baseCrashed: 'baseCrash',
+  baseCrashed: 'baseCrashed',
   playerBombed: 'playerBombed',
   dockingSuccess: 'dockingComplete',
   dockingFailed: 'dockingFailed',
@@ -59,7 +62,7 @@ const baseStartScrollState = {
 
 const baseScrollingState = {
   name: 'baseScrolling',
-  nextStates: [stateNames.crashed, stateNames.docked],
+  nextStates: [stateNames.baseDocked, stateNames.baseCrashed],
   detectCollisions: true,
   execute: (playerBase) => {
     // do nothing - the timer created in baseStartScrollState will execute the moveRight code for us
@@ -72,12 +75,8 @@ const baseDockedState = {
   detectCollisions: false,
   processPlayerInputs: false,
   execute: (playerBase) => {
-    // TODO:
-    // Show bonus score
-    // Show total score
-    // Switch base to follow mode
-    // Switch capsule to live mode
-    // Begin next phase
+    playerBase.engine.playerPoints += playerBase.engine.playerBonus;
+    playerBase.fsm.transition(playerBase.fsm.states.follow);
   }
 };
 
@@ -121,7 +120,8 @@ const playerDieState = {
   processPlayerInputs: false,
   execute: (player) => {
     // re-spawn (if there are sufficient lives remaining)
-    if (player.engine.config.game.playerLives > 0) {
+    if (player.engine.playerLives > 1) {
+      player.engine.playerLives -= 1;
       player.engine.eventSystem.dispatchEvent(player.engine.id, {action: 'PLAYERRESPAWN'});    
     } else {
       player.engine.eventSystem.dispatchEvent(player.engine.id, {action: 'GAMEOVER'});    
@@ -159,7 +159,7 @@ const capsuleRespawnState = {
   execute: (playerCapsule) => {
     // TODO:
     // move capsule to centre column
-    // decrement remaining lives
+    playerCapsule.engine.playerLives -= 1;
     // transition to live state
     playerCapsule.fsm.transition(capsuleLiveState);
   }
@@ -182,7 +182,7 @@ const capsuleHitState = {
 
 const capsuleLaunchState = {
   name: stateNames.capsuleLaunch,
-  nextStates: [stateNames.capsuleAscent, stateNames.capsuleDescent],
+  nextStates: [stateNames.capsuleAscent],
   detectCollisions: false,
   processPlayerInputs: false,
   execute: (playerCapsule) => {
@@ -209,6 +209,8 @@ const capsuleAscentState = {
     playerCapsule.engine.timers.cancel('CAPSULEASCENT');
     playerCapsule.engine.timers.add('CAPSULEDESCENT', null, 2000, playerCapsule.moveDown.bind(playerCapsule));
     playerCapsule.engine.timers.start('CAPSULEDESCENT');
+    playerCapsule.engine.playerBonus = 5000;
+    showBonus(playerCapsule.engine);
     playerBase.fsm.transition(playerBase.fsm.states.scrollStart);
     playerCapsule.fsm.transition(playerCapsule.fsm.states.descent);
   }
@@ -222,8 +224,15 @@ const capsuleDescentState = {
   execute: (playerCapsule) => {
     const playerBase = playerCapsule.engine.playerBase;
     // decrement bonus points
-    // if bonus == 0; stop
-    if (playerCapsule.currentCell.row <= 1) {
+    playerCapsule.engine.playerBonus -= 1;
+    showBonus(playerCapsule.engine);
+    if (playerCapsule.engine.playerBonus < 1) {
+      playerCapsule.engine.timers.cancel('CAPSULEDESCENT');
+      playerCapsule.engine.timers.cancel('BASESCROLL');
+      // transition to crashed state
+      playerCapsule.fsm.transition(playerCapsule.fsm.states.crashed);
+      playerBase.fsm.transition(playerBase.fsm.states.crashed);
+    } else if (playerCapsule.currentCell.row <= 1) {
       playerCapsule.engine.timers.cancel('CAPSULEDESCENT');
       playerCapsule.engine.timers.cancel('BASESCROLL');
       if (playerBase.currentCell.column == playerBase.currentCell.column) {
@@ -232,6 +241,7 @@ const capsuleDescentState = {
         playerBase.fsm.transition(playerBase.fsm.states.docked);
       } else {
         // transition to crashed state
+        playerCapsule.engine.playerBonus = 0;
         playerCapsule.fsm.transition(playerCapsule.fsm.states.crashed);
         playerBase.fsm.transition(playerBase.fsm.states.crashed);
       }
@@ -241,16 +251,11 @@ const capsuleDescentState = {
 
 const capsuleDockedState = {
   name: stateNames.capsuleDocked,
-  nextStates: [stateNames.capsuleLive],
+  nextStates: [],
   detectCollisions: false,
   processPlayerInputs: false,
   execute: (playerCapsule) => {
-    // TODO:
-    // Show bonus score
-    // Show total score
-    // Switch base to follow mode
-    // Switch capsule to live mode
-    // Begin next phase
+    // Bonus points (if any) are added to the score by the base when it enters docked state
   }
 };
 

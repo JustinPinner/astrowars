@@ -6,7 +6,8 @@ import {
   // gameStart,
   runInterstitial,
   spawnWarships,
-  nextPhase
+  nextPhase,
+  initDemoMode
 } from '../behaviour/gameActions';
 import { processor as keyProcessor } from '../ui/keyProcessor';
 
@@ -118,7 +119,6 @@ export const game = () => {
                 gameObject.disposable = true;
               }
             }
-            engine.config.game.playerLives -= 1; 
             break;
 
           case 'PLAYEROVERRUN':
@@ -276,10 +276,20 @@ export const game = () => {
                 gameObject.fsm.transition(gameObject.fsm.states.flash);
               }
             }
-            break;          
+            engine.eventSystem.dispatchEvent(
+              engine.id, 
+              {
+                action: 'HOLD', 
+                value: 5000, 
+                onTimeUp: (engine) => {
+                  initDemoMode(engine);
+                }
+              }
+            );
+            break; 
         }
       }
-      
+
       if (evt && evt.callback) {
         if (evt.callbackArgs) {
           evt.callback(evt.callbackArgs);
