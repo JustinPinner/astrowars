@@ -1,6 +1,6 @@
 {
   "name": "astrowars",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "private": true,
   "scripts": {
@@ -26,7 +26,6 @@
   },
   "dependencies": {
     "eccentric-engine": "^1.0.2",
-    "uuid": "^3.3.2",
-    "uuidv4": "^4.0.0"
+    "uuid": "^3.3.2"
   }
 }
