@@ -4,4 +4,6 @@ Grandstand's 80s tabletop classic revisited
 
 Built for (and to test) my [EccentricEngine](https://github.com/JustinPinner/EccentricEngine) JS game engine
 
-![Alt Text](https://github.com/JustinPinner/astrowars/blob/master/AstroWars3.gif)
+<img src="https://github.com/JustinPinner/astrowars/blob/master/AstroWars3.gif" alt="demo gif" width="340px"/>
+
+[Play a dev build here](https://justinpinner.github.io/astrowars/default.html=340x) **Warning:** there will be bugs
