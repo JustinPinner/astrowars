@@ -6,4 +6,4 @@ Built for (and to test) my [EccentricEngine](https://github.com/JustinPinner/Ecc
 
 <img src="https://github.com/JustinPinner/astrowars/blob/master/AstroWars3.gif" alt="demo gif" width="340px"/>
 
-[Play a dev build here](https://justinpinner.github.io/astrowars/default.html=340x) **Warning:** there will be bugs
+[Play a dev build here](https://justinpinner.github.io/astrowars/default.html) **Warning:** there will be bugs
