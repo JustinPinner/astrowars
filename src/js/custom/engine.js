@@ -1,4 +1,5 @@
-import { Engine } from 'eccentric-engine/Engine';
+//import { Engine } from 'eccentric-engine/Engine';
+import { Engine } from '../../../../EccentricEngine/src/engine/engine';
 
 class AWEngine extends Engine {
   constructor(cfg, lfcyc) {
@@ -17,6 +18,11 @@ class AWEngine extends Engine {
   get playerBase() {
     const baseObjs = this.gameObjects.filter(function(obj) { return obj.isPlayerBase; });
     return baseObjs && baseObjs.length > 0 && baseObjs[0];  
+  }
+  get playerObjects() {
+    const capsule = this.playerCapsule;
+    const base = this.playerBase;
+    return [capsule, base];
   }
 }
 

@@ -24,41 +24,47 @@ const initGameBoard = (gameEngine) => {
   }
 };
 
-const displayDigits = (gameEngine, intValue, displayLeadingZeroes = false) => {
+const displayDigits = (gameEngine, intValue, displayLeadingZeroes) => {
   if (!gameEngine.gameBoard) {
     return;
   }
+
+  // protect against 6+ digit value (roll back to 0)
+  const valToDisplay = (intValue > Number(String(9).repeat(gameEngine.gameBoard.columns))) ? 0 : intValue;
+  const padChar = (displayLeadingZeroes ? '0' : '_');
+  const maxLength = gameEngine.gameBoard.columns;
+  const padded = gameEngine.formatter.leftPad(valToDisplay, padChar, maxLength);
+  
+  const digits = padded.split('');
   const digitRow = 10;
-  const stringNum = intValue.toString();
-  const pad = gameEngine.gameBoard.columns - stringNum.length - 1;
-  // display padding characters (maybe)
-  if (displayLeadingZeroes) {
-    for (let padCol = 0; padCol < pad; padCol += 1) {
-      const cell = gameEngine.gameBoard.board[digitRow][padCol];
-      const digit = (cell.contents[0] && cell.contents[0].isDigit) ? cell.contents[0] : cell.addObject(new Digit(
-        gameEngine.config.digit,
-        {
-          x: cell.x, 
-          y: cell.y
-        },
-        gameEngine  
-      ));
-      digit.value = 0;
-    }
-  }
-  // display actual numbers
-  for (let d=0; d < stringNum.length; d+=1) {
-    const col = pad + d;
+
+  for (let col=0; col < gameEngine.gameBoard.columns; col += 1) {
     const cell = gameEngine.gameBoard.board[digitRow][col];
-    const digit = (cell.contents[0] && cell.contents[0].isDigit) ? cell.contents[0] : cell.addObject(new Digit(
-      gameEngine.config.digit,
-      {
-        x: cell.x, 
-        y: cell.y
-      },
-      gameEngine  
-    ));
-    digit.value = Number(stringNum.substr(d, 1));
+    if (!isNaN(digits[col])) {
+      const cellDigit = cell.contents.length > 0 ? 
+        cell.contents.filter(function(obj){return obj.isDigit;})[0] : 
+        new Digit(
+          gameEngine.config.digit,
+          {
+            x: cell.x, 
+            y: cell.y
+          },
+          gameEngine  
+        );
+      cellDigit.value = digits[col];
+      if (cell.contents.length < 1) {
+        cell.contents.push(cellDigit);
+      }
+    } else {
+      if (cell.contents && cell.contents.length > 0) {
+        for (const obj in cell.contents) {
+          if (cell.contents[obj].isDigit) {
+            gameEngine.deleteObjectById(cell.contents[obj].id);
+            cell.contents.pop(obj);      
+          }
+        }
+      }
+    }
   }
 };
 
@@ -71,11 +77,16 @@ const showLives = (gameEngine) => {
 };
 
 const showScore = (gameEngine) => {
+  if (gameEngine.playerPoints > Number(String(9).repeat(gameEngine.gameBoard.columns))) {
+    gameEngine.eventSystem.dispatchEvent(engine.id, {action: "CLOCKED"});
+    gameEngine.playerPoints = 0;
+    gameEngine.playerLives += 3;
+  }
   displayDigits(gameEngine, gameEngine.playerPoints);
 };
 
 const showBonus = (gameEngine) => {
-  const withLeadingDigits = true;
+  const withLeadingDigits = false;
   displayDigits(gameEngine, gameEngine.playerBonus, withLeadingDigits);
 }
 
@@ -193,8 +204,9 @@ const initDemoMode = (gameEngine) => {
 
 const runInterstitial = (gameEngine) => {
   const beginNextPhase = 'BEGINNEXTPHASE';
+  const snp = gameEngine.snapshotSave();
   switch (gameEngine.currentPhase) {
-    case 0:
+    case gameEngine.config.phases().demo.id:
       reset(gameEngine);
       gameEngine.interstitial = true;
       showLives(gameEngine);
@@ -212,11 +224,10 @@ const runInterstitial = (gameEngine) => {
         }
       );
       break;
-    case 1:
-    case 2:
-    case 3:
-    case 4:
-      const snp = gameEngine.snapshotSave();
+    case gameEngine.config.phases().assault.id:
+    case gameEngine.config.phases().dive.id:
+    case gameEngine.config.phases().command.id:
+    case gameEngine.config.phases().bonus.id:
       reset(gameEngine);
       gameEngine.interstitial = true;
       gameEngine.playerLives = snp.data.playerLives;
@@ -243,14 +254,31 @@ const runInterstitial = (gameEngine) => {
         }
       );
       break;
+    case gameEngine.config.phases().gameover.id:
+      reset(gameEngine);
+      gameEngine.interstitial = true;
+      gameEngine.playerPoints = snp.data.playerPoints;
+      showScore(gameEngine);
+      gameEngine.eventSystem.dispatchEvent(
+        gameEngine.id, 
+        {
+          action: 'HOLD', 
+          value: 3000, 
+          onTimeUp: (engine) => {
+            engine.interstitial = false;
+            engine.eventSystem.dispatchEvent(engine.id, {action: beginNextPhase});
+          }
+        }
+      );  
+      break;  
   }
 };
 
 const nextPhase = (gameEngine) => {
-  // testing specific phases from start...
-  // if (gameEngine.currentPhase == 0) {
-  //   gameEngine.currentPhase = 3;  // start as if phase 3 just ended
-  // }
+  if (gameEngine.currentPhase == gameEngine.config.phases().gameover.id) {
+    initDemoMode(gameEngine);
+    return;
+  }
   const score = gameEngine.playerPoints;
   const phase = gameEngine.currentPhase;
   const lives = gameEngine.playerLives;
@@ -268,6 +296,7 @@ const nextPhase = (gameEngine) => {
 
 export {
   showScore,
+  showLives,
   showBonus,
   reset,
   initDemoMode,

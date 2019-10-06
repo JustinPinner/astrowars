@@ -3,16 +3,16 @@
 import { phase } from './phase';
 import {
   showScore,
-  // gameStart,
+  showLives,
   runInterstitial,
   spawnWarships,
-  nextPhase,
-  initDemoMode
+  nextPhase
 } from '../behaviour/gameActions';
 import { processor as keyProcessor } from '../ui/keyProcessor';
 
 export const game = () => {
   return {
+    debugEngine: (location.search.indexOf('debug') > -1) ? true : false,
     version: 0.1,
     fps: 30,
     canvasses: {
@@ -100,12 +100,14 @@ export const game = () => {
             }
             break;
 
-          case 'ADDPLAYERPOINTS': 
-            engine.playerPoints = engine.playerPoints ? engine.playerPoints += evt.value : evt.value ;
+          case 'ADDPLAYERPOINTS':
+            const addVal = evt.value ? (!isNaN(evt.value) ? evt.value : 0) : 0; 
+            engine.playerPoints = engine.playerPoints ? engine.playerPoints += addVal : addVal ;
             showScore(engine);
             break;
 
           case 'PLAYERBOMBED':
+            engine.eventSystem.dispatchEvent(engine.id, {action: 'TAKELIFE'});
             for (const obj in engine.objects) {
               const gameObject = engine.objects[obj];
               if (gameObject.isAlien && gameObject.fsm) {                
@@ -119,6 +121,7 @@ export const game = () => {
                 gameObject.disposable = true;
               }
             }
+            showLives(engine);
             break;
 
           case 'PLAYEROVERRUN':
@@ -126,6 +129,7 @@ export const game = () => {
               console.log('Error in PLAYEROVERRUN: missing event source and/or target objects');
               return;
             }
+            engine.eventSystem.dispatchEvent(engine.id, {action: 'TAKELIFE'});
             const alien = evt.source;
             const player = evt.target;
             const playerBase = engine.getObjectByType('playerBase');
@@ -143,6 +147,7 @@ export const game = () => {
             alien.fsm.transition(alien.fsm.states.flash);
             player.fsm.transition(player.fsm.states.flash);
             playerBase && playerBase.fsm.transition(playerBase.fsm.states.flash);
+            showLives(engine);
             break;
 
           case 'ALIENDEATH':
@@ -164,27 +169,27 @@ export const game = () => {
             break;
 
           case 'PLAYERRESPAWN':
-            // TODO!
-            for (const obj in engine.objects) {
-              const gameObject = engine.objects[obj];
-              if (gameObject.isPlayer) {
-                const currentCell = gameObject.currentCell;
-                if (currentCell.row != gameObject.conf.startRow || currentCell.column != gameObject.conf.startColumn) {
-                  // reset row/column
-                  currentCell.removeObject(gameObject);
-                  // engine.gameBoard.board[gameObject.currentCell.row][gameObject.currentCell.column].gameObject = {};
-                  const startCell = engine.gameBoard.board[gameObject.conf.startRow][gameObject.conf.startColumn];
-                  startCell.clearObjects();
-                  startCell.addObject(gameObject);
-                  gameObject.coordinates.x = startCell.x;
-                  gameObject.coordinates.y = startCell.y;
-                }
-                gameObject.canDraw = true;
-                engine.eventSystem.dispatchEvent(gameObject.id, {target: 'FSM', action: 'SET', state: gameObject.fsm.states.live});
-                if (gameObject.isPlayerCapsule) {
-                  engine.eventSystem.dispatchEvent(engine.id, {action: 'RESUMEOBJECTS'});
-                } 
-              }             
+            showScore(engine);
+            const playerObjects = engine.playerObjects;
+            for (const obj in playerObjects) {             
+            // for (const obj in engine.objects) {
+              const gameObject = playerObjects[obj];
+              const currentCell = gameObject.currentCell;
+              if (currentCell.row != gameObject.conf.startRow || currentCell.column != gameObject.conf.startColumn) {
+                // reset row/column
+                currentCell.removeObject(gameObject);
+                // engine.gameBoard.board[gameObject.currentCell.row][gameObject.currentCell.column].gameObject = {};
+                const startCell = engine.gameBoard.board[gameObject.conf.startRow][gameObject.conf.startColumn];
+                startCell.clearObjects();
+                startCell.addObject(gameObject);
+                gameObject.coordinates.x = startCell.x;
+                gameObject.coordinates.y = startCell.y;
+              }
+              gameObject.canDraw = true;
+              engine.eventSystem.dispatchEvent(gameObject.id, {target: 'FSM', action: 'SET', state: gameObject.fsm.states.live});
+              if (gameObject.isPlayerCapsule) {
+                engine.eventSystem.dispatchEvent(engine.id, {action: 'RESUMEOBJECTS'});
+              } 
             }
             break;
 
@@ -267,26 +272,21 @@ export const game = () => {
             break;
   
           case 'GAMEOVER':
-            for (const obj in engine.objects) {
-              const gameObject = engine.objects[obj];
-              if (gameObject.isPlayer || gameObject.isAlien || gameObject.isProjectile) {
-                gameObject.disposable = true;
-              }
-              if (gameObject.isDigit) {
-                gameObject.fsm.transition(gameObject.fsm.states.flash);
-              }
+            engine.currentPhase = engine.config.phases().gameover.id;
+            if (engine.config.game.phases(engine.currentPhase).interstitialAtEnd) {
+              runInterstitial(engine);
+            } else {
+              nextPhase(engine);
             }
-            engine.eventSystem.dispatchEvent(
-              engine.id, 
-              {
-                action: 'HOLD', 
-                value: 5000, 
-                onTimeUp: (engine) => {
-                  initDemoMode(engine);
-                }
-              }
-            );
-            break; 
+            break;
+
+          case 'ADDLIFE':
+            engine.playerLives += 1;
+            break;
+
+          case 'TAKELIFE':
+            engine.playerLives -= 1;
+            break;
         }
       }
 

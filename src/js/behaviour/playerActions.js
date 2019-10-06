@@ -120,8 +120,7 @@ const playerDieState = {
   processPlayerInputs: false,
   execute: (player) => {
     // re-spawn (if there are sufficient lives remaining)
-    if (player.engine.playerLives > 1) {
-      player.engine.playerLives -= 1;
+    if (player.engine.playerLives > 0) {
       player.engine.eventSystem.dispatchEvent(player.engine.id, {action: 'PLAYERRESPAWN'});    
     } else {
       player.engine.eventSystem.dispatchEvent(player.engine.id, {action: 'GAMEOVER'});    
@@ -157,9 +156,6 @@ const capsuleRespawnState = {
   detectCollisions: false,
   processPlayerInputs: false,
   execute: (playerCapsule) => {
-    // TODO:
-    // move capsule to centre column
-    playerCapsule.engine.playerLives -= 1;
     // transition to live state
     playerCapsule.fsm.transition(capsuleLiveState);
   }

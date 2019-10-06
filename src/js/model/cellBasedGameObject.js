@@ -1,5 +1,7 @@
  
 import { GameObject } from 'eccentric-engine/Engine';
+// import { GameObject } from '../../../../EccentricEngine/src/model/gameObject';
+
 import { 
   horizontalMove,
   verticalMove 
