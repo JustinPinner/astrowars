@@ -11,6 +11,16 @@ To get started, either clone the [EccentricEngine repo](https://github.com/Justi
 If you chose to clone the [EccentricEngine repo](https://github.com/JustinPinner/EccentricEngine) instead of installing from npm, you'll need to make sure to comment out all the `import { Something } from 'eccentric-engine/Engine';` statements (run a global search in your editor for `from 'eccentric-engine/Engine'`) and change the relative path statements to match your local directory structure, e.g.
 `import { Something } from '../your/path/to/EccentricEngine/src/engine/engine';`
 
+<img src="https://github.com/JustinPinner/astrowars/blob/master/AstroWars3.gif" alt="demo gif" width="340px"/>
+
+## Instructions
+
+* Space: Start
+* Left/Right Arrow keys: Should be obvs, but just in case... move left and right
+* Enter: Fire
+
+[Play a dev build here](https://justinpinner.github.io/astrowars/default.html) **Warning:** there will be bugs
+
 ## Versions
 
 1.0.2
