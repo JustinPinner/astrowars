@@ -151,16 +151,16 @@ export const game = () => {
             break;
 
           case 'ALIENDEATH':
-            const phase = engine.config.phases(engine.currentPhase);
+            const currentPhase = engine.config.phases(engine.currentPhase);
             switch (evt.value) {
               case 'warship':
-                if (engine.spawnedWarships && engine.spawnedWarships < phase.alienTotal('warship')) {
+                if (engine.spawnedWarships && engine.spawnedWarships < currentPhase.alienTotal('warship')) {
                   // spawn a new warship
                   spawnWarships(engine, 1);
                 }
                 break;
               case 'commandShip':
-                if (engine.spawnedCommandShips && engine.spawnedCommandShips < phase.alienTotal('commandShip')) {
+                if (engine.spawnedCommandShips && engine.spawnedCommandShips < currentPhase.alienTotal('commandShip')) {
                   // spawn a new commandship
                   spawnCommandShips(engine, 1);
                 }
