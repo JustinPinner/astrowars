@@ -2,11 +2,41 @@
 
 import { alienFSMStates } from '../behaviour/alienActions';
 
-export const phase = (phase) => {
-  switch (phase) {
-    case 0: 
+const phases = {
+  'gameover': {
+    'id': -1,
+    'name': 'GameOver'
+  },
+  'demo': {
+    'id': 0,
+    'name': 'Demo'
+  },
+  'assault': {
+    'id': 1,
+    'name': 'Assault'
+  },
+  'dive': {
+    'id': 2,
+    'name': 'Dive'
+  },
+  'command': {
+    'id': 3,
+    'name': 'Dive'
+  },
+  'bonus': {
+    'id': 4,
+    'name': 'Bonus'
+  }
+};
+
+export const phase = (phaseId) => {
+  if (phaseId == undefined || isNaN(phaseId)) {
+    return phases;
+  }
+  switch (phaseId) {
+    case phases.demo.id: 
       return {
-        name: 'demo',
+        name: phases.demo.name,
         alienTotal: (alienType) => {
           return (alienType == 'warship') ? 4 : 3;
         },
@@ -19,9 +49,9 @@ export const phase = (phase) => {
         },
         interstitialAtEnd: true
       };
-    case 1:
+    case phases.assault.id:
       return {
-        name: 'assault',
+        name: phases.assault.name,
         alienTotal: (alienType) => {
           return (alienType == 'warship') ? 30 : 3;
         },
@@ -34,9 +64,9 @@ export const phase = (phase) => {
         },
         interstitialAtEnd: true
       };
-    case 2:
+    case phases.dive.id:
       return {
-        name: 'dive',
+        name: phases.dive.name,
         alienTotal: (alienType) => {
           return (alienType == 'warship') ? 15 : 0;
         },
@@ -49,9 +79,9 @@ export const phase = (phase) => {
         },
         interstitialAtEnd: true
       };
-    case 3:
+    case phases.command.id:
       return {
-        name: 'command',
+        name: phases.command.name,
         alienTotal: (alienType) => {
           return (alienType == 'commandShip') ? 3 : 0;
         },
@@ -64,9 +94,20 @@ export const phase = (phase) => {
         },
         interstitialAtEnd: true
       };
-    case 4: 
+    case phases.bonus.id: 
       return {
-        name: 'bonus',
+        name: phases.bonus.name,
+        alienTotal: () => {
+          return 0;
+        },
+        alienConcurrent: () => {
+          return 0;
+        },
+        interstitialAtEnd: true
+      };
+    case phases.gameover.id:
+      return {
+        name: phases.gameover.name,
         alienTotal: () => {
           return 0;
         },
