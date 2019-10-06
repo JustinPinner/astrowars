@@ -4,8 +4,6 @@ Grandstand's 80s tabletop classic revisited
 
 Built for (and to test) my [EccentricEngine](https://github.com/JustinPinner/EccentricEngine) JS game engine
 
-![Alt Text](https://github.com/JustinPinner/astrowars/blob/master/AstroWars3.gif)
-
 To get started, either clone the [EccentricEngine repo](https://github.com/JustinPinner/EccentricEngine) OR install it from the npm package registry by running `npm -i eccentric-engine`
 
 If you chose to clone the [EccentricEngine repo](https://github.com/JustinPinner/EccentricEngine) instead of installing from npm, you'll need to make sure to comment out all the `import { Something } from 'eccentric-engine/Engine';` statements (run a global search in your editor for `from 'eccentric-engine/Engine'`) and change the relative path statements to match your local directory structure, e.g.
