@@ -17,7 +17,7 @@ If you chose to clone the [EccentricEngine repo](https://github.com/JustinPinner
 * Left/Right Arrow keys: Should be obvs, but just in case... move left and right
 * Enter: Fire
 
-[Play a dev build here](https://justinpinner.github.io/astrowars/default.html) **Warning:** there will be bugs
+[Play a dev build here](https://justinpinner.github.io/astrowars/default.html) **Warning:** there will be bugs. Should work fine on desktop versions of Chrome, Firefox and Safari (needs a keyboard, see).
 
 ## Versions
 
