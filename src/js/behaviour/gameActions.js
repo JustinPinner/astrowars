@@ -24,25 +24,47 @@ const initGameBoard = (gameEngine) => {
   }
 };
 
-const displayDigits = (gameEngine, intScore) => {
+const displayDigits = (gameEngine, intValue, displayLeadingZeroes) => {
   if (!gameEngine.gameBoard) {
     return;
   }
+
+  // protect against 6+ digit value (roll back to 0)
+  const valToDisplay = (intValue > Number(String(9).repeat(gameEngine.gameBoard.columns))) ? 0 : intValue;
+  const padChar = (displayLeadingZeroes ? '0' : '_');
+  const maxLength = gameEngine.gameBoard.columns;
+  const padded = gameEngine.formatter.leftPad(valToDisplay, padChar, maxLength);
+  
+  const digits = padded.split('');
   const digitRow = 10;
-  const stringNum = intScore.toString();
-  for (let d=0; d < stringNum.length; d+=1) {
-    const pad = gameEngine.gameBoard.columns - stringNum.length - 1;
-    const col = pad + d;
+
+  for (let col=0; col < gameEngine.gameBoard.columns; col += 1) {
     const cell = gameEngine.gameBoard.board[digitRow][col];
-    const digit = (cell.contents[0] && cell.contents[0].isDigit) ? cell.contents[0] : cell.addObject(new Digit(
-      gameEngine.config.digit,
-      {
-        x: cell.x, 
-        y: cell.y
-      },
-      gameEngine  
-    ));
-    digit.value = Number(stringNum.substr(d, 1));
+    if (!isNaN(digits[col])) {
+      const cellDigit = cell.contents.length > 0 ? 
+        cell.contents.filter(function(obj){return obj.isDigit;})[0] : 
+        new Digit(
+          gameEngine.config.digit,
+          {
+            x: cell.x, 
+            y: cell.y
+          },
+          gameEngine  
+        );
+      cellDigit.value = digits[col];
+      if (cell.contents.length < 1) {
+        cell.contents.push(cellDigit);
+      }
+    } else {
+      if (cell.contents && cell.contents.length > 0) {
+        for (const obj in cell.contents) {
+          if (cell.contents[obj].isDigit) {
+            gameEngine.deleteObjectById(cell.contents[obj].id);
+            cell.contents.pop(obj);      
+          }
+        }
+      }
+    }
   }
 };
 
@@ -55,8 +77,18 @@ const showLives = (gameEngine) => {
 };
 
 const showScore = (gameEngine) => {
+  if (gameEngine.playerPoints > Number(String(9).repeat(gameEngine.gameBoard.columns))) {
+    gameEngine.eventSystem.dispatchEvent(engine.id, {action: "CLOCKED"});
+    gameEngine.playerPoints = 0;
+    gameEngine.playerLives += 3;
+  }
   displayDigits(gameEngine, gameEngine.playerPoints);
 };
+
+const showBonus = (gameEngine) => {
+  const withLeadingDigits = false;
+  displayDigits(gameEngine, gameEngine.playerBonus, withLeadingDigits);
+}
 
 const spawnCommandShips = (gameEngine, qty) => {
   // command ships occupy the row below the score (9 by default)
@@ -111,7 +143,7 @@ const spawnPlayerCapsule = (gameEngine) => {
   } else {
     const snp = gameEngine.snapshotLoad();
     const playerObjs = snp && snp.data && snp.data.gameObjects.filter(function(obj) {return obj.isPlayerCapsule});
-    playerColumn = playerObjs.length > 0 ? playerObjs[0].currentCell.column : playerCapsuleConfig.startColumn;
+    playerColumn = playerObjs && playerObjs.length > 0 ? playerObjs[0].currentCell.column : playerCapsuleConfig.startColumn;
   }
   const cell = gameEngine.gameBoard.board[playerCapsuleRow][playerColumn];
   const playerCapsule = new PlayerCapsule(
@@ -123,6 +155,9 @@ const spawnPlayerCapsule = (gameEngine) => {
     gameEngine
   );
   cell.addObject(playerCapsule);
+  if (gameEngine.currentPhase == 4 && !gameEngine.interstitial) {
+    gameEngine.eventSystem.dispatchEvent(playerCapsule.id, {target: 'FSM', action: 'SET', state: playerCapsule.fsm.states.launch});
+  }
 };
 
 const spawnPlayerBase = (gameEngine) => {
@@ -147,7 +182,7 @@ const spawnPlayerBase = (gameEngine) => {
 
 const reset = (gameEngine) => {
   // remove all game objects
-  gameEngine.gameObjects = [];
+  gameEngine.disposeAllObjects();
   // reset the gameboard
   initGameBoard(gameEngine);
   // reset score
@@ -169,9 +204,11 @@ const initDemoMode = (gameEngine) => {
 
 const runInterstitial = (gameEngine) => {
   const beginNextPhase = 'BEGINNEXTPHASE';
+  const snp = gameEngine.snapshotSave();
   switch (gameEngine.currentPhase) {
-    case 0:
+    case gameEngine.config.phases().demo.id:
       reset(gameEngine);
+      gameEngine.interstitial = true;
       showLives(gameEngine);
       spawnPlayerBase(gameEngine);
       spawnPlayerCapsule(gameEngine);
@@ -181,16 +218,18 @@ const runInterstitial = (gameEngine) => {
           action: 'HOLD', 
           value: 3000, 
           onTimeUp: (engine) => {
+            engine.interstitial = false;
             engine.eventSystem.dispatchEvent(engine.id, {action: beginNextPhase});
           }
         }
       );
       break;
-    case 1:
-    case 2:
-    case 3:
-      const snp = gameEngine.snapshotSave();
+    case gameEngine.config.phases().assault.id:
+    case gameEngine.config.phases().dive.id:
+    case gameEngine.config.phases().command.id:
+    case gameEngine.config.phases().bonus.id:
       reset(gameEngine);
+      gameEngine.interstitial = true;
       gameEngine.playerLives = snp.data.playerLives;
       showLives(gameEngine);
       spawnCommandShips(gameEngine);
@@ -209,28 +248,45 @@ const runInterstitial = (gameEngine) => {
           value: 3000, 
           onTimeUp: (engine) => {
             engine.restore();
+            engine.interstitial = false;
             engine.eventSystem.dispatchEvent(engine.id, {action: beginNextPhase});
           }
         }
       );
       break;
-    case 4:
-      debugger;
+    case gameEngine.config.phases().gameover.id:
+      reset(gameEngine);
+      gameEngine.interstitial = true;
+      gameEngine.playerPoints = snp.data.playerPoints;
+      showScore(gameEngine);
+      gameEngine.eventSystem.dispatchEvent(
+        gameEngine.id, 
+        {
+          action: 'HOLD', 
+          value: 3000, 
+          onTimeUp: (engine) => {
+            engine.interstitial = false;
+            engine.eventSystem.dispatchEvent(engine.id, {action: beginNextPhase});
+          }
+        }
+      );  
+      break;  
   }
 };
 
 const nextPhase = (gameEngine) => {
-  // testing specific phases from start...
-  // if (gameEngine.currentPhase == 0) {
-  //   gameEngine.currentPhase = 2;  // start at phase 3
-  // }
-  const score = gameEngine.playerPoints || 0;
-  const phase = gameEngine.currentPhase || 0;
-  const lives = gameEngine.playerLives || 5;
+  if (gameEngine.currentPhase == gameEngine.config.phases().gameover.id) {
+    initDemoMode(gameEngine);
+    return;
+  }
+  const score = gameEngine.playerPoints;
+  const phase = gameEngine.currentPhase;
+  const lives = gameEngine.playerLives;
   reset(gameEngine);
   gameEngine.playerPoints = score;
-  gameEngine.currentPhase = (phase > 4) ? 1: phase + 1;
+  gameEngine.currentPhase = (phase > 3) ? 1: phase + 1;
   gameEngine.playerLives = lives;
+  gameEngine.playerBonus = 0;
   showScore(gameEngine);
   spawnCommandShips(gameEngine);  
   spawnWarships(gameEngine);
@@ -240,6 +296,9 @@ const nextPhase = (gameEngine) => {
 
 export {
   showScore,
+  showLives,
+  showBonus,
+  reset,
   initDemoMode,
   spawnWarships,
   spawnCommandShips,

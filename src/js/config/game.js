@@ -3,7 +3,7 @@
 import { phase } from './phase';
 import {
   showScore,
-  // gameStart,
+  showLives,
   runInterstitial,
   spawnWarships,
   nextPhase
@@ -12,6 +12,7 @@ import { processor as keyProcessor } from '../ui/keyProcessor';
 
 export const game = () => {
   return {
+    debugEngine: (location.search.indexOf('debug') > -1) ? true : false,
     version: 0.1,
     fps: 30,
     canvasses: {
@@ -99,12 +100,14 @@ export const game = () => {
             }
             break;
 
-          case 'ADDPLAYERPOINTS': 
-            engine.playerPoints = engine.playerPoints ? engine.playerPoints += evt.value : evt.value ;
+          case 'ADDPLAYERPOINTS':
+            const addVal = evt.value ? (!isNaN(evt.value) ? evt.value : 0) : 0; 
+            engine.playerPoints = engine.playerPoints ? engine.playerPoints += addVal : addVal ;
             showScore(engine);
             break;
 
           case 'PLAYERBOMBED':
+            engine.eventSystem.dispatchEvent(engine.id, {action: 'TAKELIFE'});
             for (const obj in engine.objects) {
               const gameObject = engine.objects[obj];
               if (gameObject.isAlien && gameObject.fsm) {                
@@ -118,7 +121,7 @@ export const game = () => {
                 gameObject.disposable = true;
               }
             }
-            engine.config.game.playerLives -= 1; 
+            showLives(engine);
             break;
 
           case 'PLAYEROVERRUN':
@@ -126,6 +129,7 @@ export const game = () => {
               console.log('Error in PLAYEROVERRUN: missing event source and/or target objects');
               return;
             }
+            engine.eventSystem.dispatchEvent(engine.id, {action: 'TAKELIFE'});
             const alien = evt.source;
             const player = evt.target;
             const playerBase = engine.getObjectByType('playerBase');
@@ -143,19 +147,20 @@ export const game = () => {
             alien.fsm.transition(alien.fsm.states.flash);
             player.fsm.transition(player.fsm.states.flash);
             playerBase && playerBase.fsm.transition(playerBase.fsm.states.flash);
+            showLives(engine);
             break;
 
           case 'ALIENDEATH':
-            const phase = engine.config.phases(engine.currentPhase);
+            const currentPhase = engine.config.phases(engine.currentPhase);
             switch (evt.value) {
               case 'warship':
-                if (engine.spawnedWarships && engine.spawnedWarships < phase.alienTotal('warship')) {
+                if (engine.spawnedWarships && engine.spawnedWarships < currentPhase.alienTotal('warship')) {
                   // spawn a new warship
                   spawnWarships(engine, 1);
                 }
                 break;
               case 'commandShip':
-                if (engine.spawnedCommandShips && engine.spawnedCommandShips < phase.alienTotal('commandShip')) {
+                if (engine.spawnedCommandShips && engine.spawnedCommandShips < currentPhase.alienTotal('commandShip')) {
                   // spawn a new commandship
                   spawnCommandShips(engine, 1);
                 }
@@ -164,27 +169,27 @@ export const game = () => {
             break;
 
           case 'PLAYERRESPAWN':
-            // TODO!
-            for (const obj in engine.objects) {
-              const gameObject = engine.objects[obj];
-              if (gameObject.isPlayer) {
-                const currentCell = gameObject.currentCell;
-                if (currentCell.row != gameObject.conf.startRow || currentCell.column != gameObject.conf.startColumn) {
-                  // reset row/column
-                  currentCell.removeObject(gameObject);
-                  // engine.gameBoard.board[gameObject.currentCell.row][gameObject.currentCell.column].gameObject = {};
-                  const startCell = engine.gameBoard.board[gameObject.conf.startRow][gameObject.conf.startColumn];
-                  startCell.clearObjects();
-                  startCell.addObject(gameObject);
-                  gameObject.coordinates.x = startCell.x;
-                  gameObject.coordinates.y = startCell.y;
-                }
-                gameObject.canDraw = true;
-                engine.eventSystem.dispatchEvent(gameObject.id, {target: 'FSM', action: 'SET', state: gameObject.fsm.states.live});
-                if (gameObject.isPlayerCapsule) {
-                  engine.eventSystem.dispatchEvent(engine.id, {action: 'RESUMEOBJECTS'});
-                } 
-              }             
+            showScore(engine);
+            const playerObjects = engine.playerObjects;
+            for (const obj in playerObjects) {             
+            // for (const obj in engine.objects) {
+              const gameObject = playerObjects[obj];
+              const currentCell = gameObject.currentCell;
+              if (currentCell.row != gameObject.conf.startRow || currentCell.column != gameObject.conf.startColumn) {
+                // reset row/column
+                currentCell.removeObject(gameObject);
+                // engine.gameBoard.board[gameObject.currentCell.row][gameObject.currentCell.column].gameObject = {};
+                const startCell = engine.gameBoard.board[gameObject.conf.startRow][gameObject.conf.startColumn];
+                startCell.clearObjects();
+                startCell.addObject(gameObject);
+                gameObject.coordinates.x = startCell.x;
+                gameObject.coordinates.y = startCell.y;
+              }
+              gameObject.canDraw = true;
+              engine.eventSystem.dispatchEvent(gameObject.id, {target: 'FSM', action: 'SET', state: gameObject.fsm.states.live});
+              if (gameObject.isPlayerCapsule) {
+                engine.eventSystem.dispatchEvent(engine.id, {action: 'RESUMEOBJECTS'});
+              } 
             }
             break;
 
@@ -228,6 +233,26 @@ export const game = () => {
                 break;
               case 4:
                 // if counter/bonus = 0, or capsule crashed, or docked, phase is complete
+                let isComplete = false;
+                const playerCapsule = engine.playerCapsule;
+                const playerBase = engine.playerBase;
+                if (playerCapsule && playerCapsule.fsm) {
+                  switch (playerCapsule.fsm.currentState) {
+                    case playerCapsule.fsm.states.docked || playerCapsule.fsm.states.crashed:
+                      isComplete = true;
+                      break;
+                  }
+                }
+                if (!isComplete && (playerBase && playerBase.fsm)) {
+                  switch(playerBase.fsm.currentState) {
+                    case playerBase.fsm.states.docked || playerBase.fsm.states.crashed:
+                      isComplete = true;
+                      break;
+                  }
+                }
+                if (isComplete) {
+                  engine.eventSystem.dispatchEvent(engine.id, {action: 'ENDCURRENTPHASE'});
+                }  
                 break;
             }
             break;
@@ -247,19 +272,24 @@ export const game = () => {
             break;
   
           case 'GAMEOVER':
-            for (const obj in engine.objects) {
-              const gameObject = engine.objects[obj];
-              if (gameObject.isPlayer || gameObject.isAlien || gameObject.isProjectile) {
-                gameObject.disposable = true;
-              }
-              if (gameObject.isDigit) {
-                gameObject.fsm.transition(gameObject.fsm.states.flash);
-              }
+            engine.currentPhase = engine.config.phases().gameover.id;
+            if (engine.config.game.phases(engine.currentPhase).interstitialAtEnd) {
+              runInterstitial(engine);
+            } else {
+              nextPhase(engine);
             }
-            break;          
+            break;
+
+          case 'ADDLIFE':
+            engine.playerLives += 1;
+            break;
+
+          case 'TAKELIFE':
+            engine.playerLives -= 1;
+            break;
         }
       }
-      
+
       if (evt && evt.callback) {
         if (evt.callbackArgs) {
           evt.callback(evt.callbackArgs);

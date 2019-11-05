@@ -37,6 +37,9 @@ class Config {
   get phases() {
     return this._game.phases;
   };
+  get debugEngine() {
+    return this._game.debugEngine;
+  }
 }
 
 export {

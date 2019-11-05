@@ -7,6 +7,7 @@
 
 // But if you ran npm install eccentric-engine, do it like this
 import { Engine } from 'eccentric-engine/Engine';
+// import { Engine } from '../../../../EccentricEngine/src/engine/engine';
 
 class AWEngine extends Engine {
   constructor(cfg, lfcyc) {
@@ -16,6 +17,26 @@ class AWEngine extends Engine {
     this.playerPoints = 0;
     this.playerLives = 0;
     this.currentPhase = 0;
+    this.playerBonus = 0;
+  }
+  get playerCapsule() {
+    const capsuleObjs = this.gameObjects.filter(function(obj) { return obj.isPlayerCapsule; });
+    return capsuleObjs && capsuleObjs.length > 0 && capsuleObjs[0];
+  }
+  get playerBase() {
+    const baseObjs = this.gameObjects.filter(function(obj) { return obj.isPlayerBase; });
+    return baseObjs && baseObjs.length > 0 && baseObjs[0];  
+  }
+  get playerObjects() {
+    const capsule = this.playerCapsule;
+    const base = this.playerBase;
+    return [capsule, base];
+  }
+}
+
+AWEngine.prototype.disposeAllObjects = function() {
+  for (const obj in this.gameObjects) {
+    this.gameObjects[obj].disposable = true;
   }
 }
 

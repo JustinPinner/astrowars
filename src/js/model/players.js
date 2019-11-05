@@ -1,6 +1,12 @@
 
 import { PlayerMissile } from '../model/projectiles';
 import { CellBasedGameObject } from '../model/cellBasedGameObject';
+import { 
+  horizontalMove,
+  verticalMove,
+  horizontalMoveDown,
+  moveInstructions,   
+} from './cellBasedMovement';
 
 const playerCapsuleEventListener = (thisObj, evt) => {
   if (evt.target && evt.target == 'FSM' && evt.state) {
@@ -30,36 +36,38 @@ class Player extends CellBasedGameObject {
 }
 
 Player.prototype.canMoveVertically = function (dir) {
+  let canMove = false;
   switch (dir) {
-    case 1:  // up
-      if (this.isPlayerCapsule && this.engine.currentPhase == 3 && this.state == 'launch') {
-        return true;
-      }      
+    case verticalMove.up:
+      canMove = (
+        this.isPlayerCapsule && 
+        this.engine.currentPhase == 4 && 
+        this.fsm && this.fsm.currentState && this.fsm.currentState.name == 'capsuleLaunch' && 
+        this.currentCell.row < 6
+      );
       break
-    case -1:  // down
-      if (this.isPlayerCapsule && this.engine.currentPhase == 3 && this.state == 'landing') {
-        return true;
-      }      
+    case verticalMove.down:
+      canMove = (
+        this.isPlayerCapsule && 
+        this.engine.currentPhase == 4 && 
+        this.fsm && this.fsm.currentState && this.fsm.currentState.name == 'capsuleDescent' && 
+        this.currentCell.row > 1
+      );
       break;
   }
-  return false;
+  return canMove;
 };
 
 Player.prototype.canMoveHorizontally = function (dir) {
-  if (this.isPlayerBase && this.engine.currentPhase == 3 && this.state == 'scroll') {
-    switch (dir) {
-      case -1:  // left
-        return false;
-      case 1:  // right
-        return true;
-    }  
+  let canMove = false;
+  if (this.isPlayerBase && this.engine.currentPhase == 4 && this.state == 'scroll') {
+    // only allow scrolling in a left-to-right direction
+    canMove = dir == horizontalMove.right; 
+  } else {
+    // only allow horizontal movement if we're within the gameBoard's borders
+    canMove = (dir == horizontalMove.left && this.currentCell.column > 0) || (dir == horizontalMove.right && this.currentCell.column < this.engine.gameBoard.columns - 1);
   }
-  switch (dir) {
-    case -1:  // left
-      return this.currentCell.column > 0;
-    case 1:  // right
-      return this.currentCell.column < this.engine.gameBoard.columns - 1;
-  }  
+  return canMove;
 };
 
 class PlayerCapsule extends Player {

@@ -1,3 +1,5 @@
+import { moveInstructions } from '../model/cellBasedMovement';
+
 // write alien behaviours here
 // these functions will be bound into GameObject instances with .bind(this, this)
 // so remember to change this.state if/when needed
@@ -16,37 +18,6 @@ const stateNames = {
   pause: 'pauseState',
   resume: 'resumeState',
   flash: 'flashState'
-};
-
-const horizontalMove = {
-  right: 1,   // right
-  left: -1   // left
-};
-
-const verticalMove = {
-  up: 1,  // up
-  down: -1    // down
-};
-
-const verticalMoveDown = {
-  down: -1    // down
-};
-
-const moveInstructions = {
-  leftRight: {
-    horizontal: horizontalMove,  
-  },
-  upDown: {
-    vertical: verticalMove  
-  },
-  diagonal: {
-    horizontal: horizontalMove,
-    vertical: verticalMove
-  },
-  diagonalDown: {
-    horizontal: horizontalMove,
-    vertical: verticalMoveDown
-  },
 };
 
 const nextAvailableCell = (alien, moveInstruction, canWrap) => {
