@@ -21,6 +21,10 @@ If you chose to clone the [EccentricEngine repo](https://github.com/JustinPinner
 
 ## Versions
 
+1.0.3
+=====
+* Bump to EccentricEngine 1.0.5
+
 1.0.2
 =====
 * Uses updated (v1.0.3) [EccentricEngine](https://github.com/JustinPinner/EccentricEngine)
