@@ -1,3 +1,11 @@
+// If you cloned the EccentricEngine github repo at https://github.com/JustinPinner/EccentricEngine
+// (which is much better for examining the code) import it from wherever you cloned it to, e.g. 
+// for *nix / OSX etc
+// import { Engine } from '~/code/projects/EccentricEngine/src/engine/engine';
+// for Windows
+// import { Engine } from 'c:/projects/EccentricEngine/src/engine/engine';
+
+// But if you ran npm install eccentric-engine, do it like this
 import { Engine } from 'eccentric-engine/Engine';
 // import { Engine } from '../../../../EccentricEngine/src/engine/engine';
 
