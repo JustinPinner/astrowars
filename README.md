@@ -21,6 +21,10 @@ If you chose to clone the [EccentricEngine repo](https://github.com/JustinPinner
 
 ## Versions
 
+1.0.4
+=====
+Add Windows compile.bat and setup notes
+
 1.0.3
 =====
 * Bump to EccentricEngine 1.0.5
